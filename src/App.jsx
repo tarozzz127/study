@@ -81,7 +81,10 @@ export default function App() {
       const entries = parseBackup(await file.text())
       const summary = await importMemories(entries)
       setMemories(await getMemories()); setStorageError(false)
-      help.current.close(); setNotice(`${summary.added}件の思い出を追加しました。${summary.conflicts ? `内容が違う${summary.conflicts}件は、今の記録を残して別の思い出として追加しました。` : ''}${summary.unchanged ? `同じ内容の${summary.unchanged}件は追加していません。` : ''}`)
+      help.current.close()
+      setNotice(summary.added === 0
+        ? summary.unchanged ? 'すでに同じ内容が保存されています。記録は変更していません。' : 'このバックアップには思い出がありません。記録は変更していません。'
+        : `${summary.added}件の思い出を追加しました。${summary.conflicts ? `内容が違う${summary.conflicts}件は、今の記録を残して別の思い出として追加しました。` : ''}${summary.unchanged ? `同じ内容の${summary.unchanged}件は追加していません。` : ''}`)
     } catch (error) { setBackupError(error instanceof SyntaxError ? 'バックアップファイルを読み込めませんでした。たびのあとで保存したJSONファイルを選んでください。' : error.name === 'QuotaExceededError' ? '空き容量が足りず読み込めませんでした。今の記録はそのままです。バックアップを保管し、端末の空き容量を確認してください。' : `読み込めませんでした。${error.message}`) }
     finally { event.target.value = ''; setImporting(false) }
   }
