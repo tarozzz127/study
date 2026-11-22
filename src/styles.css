@@ -11,7 +11,8 @@
   --primary-action: var(--accent);
   --primary-action-fg: var(--accent-fg);
   --radius: 12px;
-  --font: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Prefer installed Japanese fonts so offline text needs no web-font subset. */
+  --font: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, 'Noto Sans CJK JP', 'Noto Sans JP', 'Segoe UI', sans-serif;
   --soft: #eef4ec;
   --sea: #d9e6e4;
   --shadow: #243e3212;
