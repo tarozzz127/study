@@ -5,6 +5,7 @@ import { Layers, LocateFixed, Minus, Plus, RotateCcw, X } from 'lucide-react'
 import { MarkerArt } from './MarkerArt.jsx'
 
 const JAPAN = [36.2, 137.6]
+const VIEW_PADDING = { paddingTopLeft: [70, 210], paddingBottomRight: [100, 70] }
 export default function TravelMap({ memories, selected, onSelect, onAdd, onNotice, locating, setLocating }) {
   const container = useRef(null)
   const map = useRef(null)
@@ -58,7 +59,7 @@ export default function TravelMap({ memories, selected, onSelect, onAdd, onNotic
     // Fit restored memories once, not every time a new object is placed.
     if (!initializedView.current && (memories.length || selected)) {
       initializedView.current = true
-      if (!selected) map.current.fitBounds(memories.map(entry => [entry.lat, entry.lng]), { padding: [90, 90], maxZoom: 13 })
+      if (!selected) map.current.fitBounds(memories.map(entry => [entry.lat, entry.lng]), { ...VIEW_PADDING, maxZoom: 13 })
     }
     const placed = memories.find(entry => entry.id === selected?.id && !previousIds.current.has(entry.id))
     justPlaced.current = placed?.id
@@ -76,6 +77,12 @@ export default function TravelMap({ memories, selected, onSelect, onAdd, onNotic
       const label = document.createElement('span')
       label.textContent = entry.title
       marker.bindTooltip(label, { direction: 'bottom', offset: [0, 15], className: 'object-label' })
+      marker.on('keydown', event => {
+        if (event.originalEvent.key === 'Enter' || event.originalEvent.key === ' ') {
+          L.DomEvent.stop(event.originalEvent)
+          callbacks.current.onSelect(entry)
+        }
+      })
       renderedMarkers.push({ entry, marker })
       marker.on('click', event => {
         const pointer = event.originalEvent
@@ -95,11 +102,11 @@ export default function TravelMap({ memories, selected, onSelect, onAdd, onNotic
 
   useEffect(() => {
     // Saving grows the current scene. Only explicit navigation may pan it.
-    if (selected && map.current && justPlaced.current !== selected.id) map.current.panInside([selected.lat, selected.lng], { padding: [90, 100] })
+    if (selected && map.current && justPlaced.current !== selected.id) map.current.panInside([selected.lat, selected.lng], VIEW_PADDING)
   }, [selected])
 
   function showAll() {
-    if (memories.length) map.current.fitBounds(memories.map(entry => [entry.lat, entry.lng]), { padding: [90, 90], maxZoom: 13 })
+    if (memories.length) map.current.fitBounds(memories.map(entry => [entry.lat, entry.lng]), { ...VIEW_PADDING, maxZoom: 13 })
     else map.current.setView(JAPAN, 5)
   }
 
