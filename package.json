@@ -1,0 +1,24 @@
+{
+  "name": "tabi-no-ato",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=20.19" },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "start": "vite preview --host 0.0.0.0 --port 3000 --strictPort",
+    "test": "node --test src/lib/*.test.js"
+  },
+  "dependencies": {
+    "leaflet": "1.9.4",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "fake-indexeddb": "^6.0.0",
+    "vite": "^6.4.1"
+  }
+}
