@@ -138,6 +138,13 @@ h1 span { color: var(--accent); }
 .ground-grass { stroke: var(--tree); stroke-width: 2; stroke-linecap: round; opacity: .35; }
 .memory-pin:hover .ground-top, .memory-pin.is-selected .ground-top { stroke: var(--accent); stroke-width: 2; }
 .object-label.leaflet-tooltip { color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 2px 8px var(--shadow); font-family: var(--font); width: max-content; max-width: 180px; white-space: normal; overflow-wrap: anywhere; }
+.overlap-dialog { width: min(440px, calc(100% - 32px)); }
+.overlap-options { max-height: 45dvh; overflow-y: auto; }
+.overlap-options button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 8px; min-height: 66px; text-align: left; border-radius: 8px; }
+.overlap-options button:hover, .overlap-options button:focus-visible { background: var(--soft); }
+.overlap-options button > span { min-width: 0; }
+.overlap-options strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
+.overlap-options small { display: block; margin-top: 5px; font-size: 10px; color: var(--text-muted); }
 .map-object.is-new { animation: place-object .45s ease-out; }
 @keyframes place-object { from { opacity: 0; transform: translateY(-18px) scale(.8); } 65% { opacity: 1; transform: translateY(2px) scale(1.04); } to { opacity: 1; transform: none; } }
 .marker-shadow { fill: var(--text); opacity: .1; }
