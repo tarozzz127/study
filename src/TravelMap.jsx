@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { LocateFixed, Minus, Plus, RotateCcw } from 'lucide-react'
+import { Layers, LocateFixed, Minus, Plus, RotateCcw } from 'lucide-react'
 import { MarkerArt } from './MarkerArt.jsx'
 
 const JAPAN = [36.2, 137.6]
@@ -11,7 +11,11 @@ export default function TravelMap({ memories, selected, onSelect, onAdd, onNotic
   const layer = useRef(null)
   const callbacks = useRef({ onAdd, onSelect, onNotice })
   const [tileError, setTileError] = useState(false)
+  const [reference, setReference] = useState(false)
   const tiles = useRef(null)
+  const previousIds = useRef(new Set())
+  const initializedView = useRef(false)
+  const justPlaced = useRef(null)
   callbacks.current = { onAdd, onSelect, onNotice }
 
   useEffect(() => {
@@ -20,12 +24,13 @@ export default function TravelMap({ memories, selected, onSelect, onAdd, onNotic
     tiles.current = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
       maxZoom: 19,
-    }).addTo(instance)
+    })
     tiles.current.on('tileerror', () => setTileError(true))
     tiles.current.on('tileload', () => setTileError(false))
     layer.current = L.layerGroup().addTo(instance)
     instance.on('click', event => callbacks.current.onAdd({ lat: Math.max(-85, Math.min(85, event.latlng.lat)), lng: event.latlng.wrap().lng }))
     instance.on('locationfound', event => {
+      setReference(true)
       instance.flyTo(event.latlng, 13, { duration: 0.6 })
       setLocating(false)
       callbacks.current.onNotice('現在地を表示しました。残したい場所をタップしてください。')
@@ -37,32 +42,52 @@ export default function TravelMap({ memories, selected, onSelect, onAdd, onNotic
   }, [setLocating])
 
   useEffect(() => {
+    if (!map.current || !tiles.current) return
+    if (reference) tiles.current.addTo(map.current)
+    else tiles.current.remove()
+  }, [reference])
+
+  useEffect(() => {
     if (!map.current) return
+    // Fit restored memories once, not every time a new object is placed.
+    if (!initializedView.current && (memories.length || selected)) {
+      initializedView.current = true
+      if (!selected) map.current.fitBounds(memories.map(entry => [entry.lat, entry.lng]), { padding: [90, 90], maxZoom: 13 })
+    }
+    const placed = memories.find(entry => entry.id === selected?.id && !previousIds.current.has(entry.id))
+    justPlaced.current = placed?.id
+    if (placed) setReference(false)
     layer.current.clearLayers()
     memories.forEach(entry => {
       const icon = L.divIcon({
         className: `memory-pin ${selected?.id === entry.id ? 'is-selected' : ''}`,
-        html: renderToStaticMarkup(<MarkerArt type={entry.type} size={58} />),
-        iconSize: [64, 68], iconAnchor: [32, 56],
+        html: renderToStaticMarkup(<div className={`map-object ${placed?.id === entry.id ? 'is-new' : ''}`}><svg className="object-ground" viewBox="0 0 88 42" aria-hidden="true"><path className="ground-edge" d="m5 17 37-13 41 13v8L46 39 5 25z" /><path className="ground-top" d="M5 17 42 4l41 13-37 14z" /><path className="ground-grass" d="m17 19 5-2m43 2 5-2m-24 9 5-2" /></svg><MarkerArt type={entry.type} size={68} /></div>),
+        iconSize: [88, 88], iconAnchor: [44, 70],
       })
       const marker = L.marker([entry.lat, entry.lng], { icon, title: entry.title, alt: `${entry.title}の記録`, keyboard: true }).addTo(layer.current)
+      const label = document.createElement('span')
+      label.textContent = entry.title
+      marker.bindTooltip(label, { direction: 'bottom', offset: [0, 15], className: 'object-label' })
       marker.on('click', () => callbacks.current.onSelect(entry))
     })
+    previousIds.current = new Set(memories.map(entry => entry.id))
   }, [memories, selected])
 
   useEffect(() => {
-    if (selected && map.current) map.current.flyTo([selected.lat, selected.lng], Math.max(map.current.getZoom(), 10), { duration: 0.6 })
+    // Saving grows the current scene. Only explicit navigation may pan it.
+    if (selected && map.current && justPlaced.current !== selected.id) map.current.panInside([selected.lat, selected.lng], { padding: [90, 100] })
   }, [selected])
 
   function showAll() {
-    if (memories.length) map.current.fitBounds(memories.map(entry => [entry.lat, entry.lng]), { padding: [80, 80], maxZoom: 12 })
+    if (memories.length) map.current.fitBounds(memories.map(entry => [entry.lat, entry.lng]), { padding: [90, 90], maxZoom: 13 })
     else map.current.setView(JAPAN, 5)
   }
 
-  return <div className="map-shell">
+  return <div className={`map-shell ${reference ? 'reference-map' : 'personal-map'}`}>
     <div ref={container} className="map-canvas" aria-label="旅の地図。場所をタップすると記録できます。キーボードでは矢印で移動し、中央に記録ボタンを使えます。" />
-    <div className="map-tip"><span className="tip-dot" />地図をタップして、思い出を残そう</div>
-    {tileError && <div className="tile-error" role="status">地図を読み込めません。接続を確認して <button onClick={() => { setTileError(false); tiles.current.redraw() }}>再読み込み</button></div>}
+    <div className="map-view-switch" role="group" aria-label="地図の表示"><button aria-pressed={!reference} onClick={() => setReference(false)}>自分の地図</button><button aria-pressed={reference} onClick={() => setReference(true)}><Layers size={14} />場所を探す</button></div>
+    <div className="map-tip"><span className="tip-dot" />{reference ? '下絵で訪れた場所を探して、タップ' : memories.length ? `建物 ${memories.filter(entry => entry.type === 'building').length} ・ 山 ${memories.filter(entry => entry.type === 'mountain').length} — あなたの旅で育つ地図` : 'まっしろな地図。「場所を探す」からはじめよう'}</div>
+    {tileError && reference && <div className="tile-error" role="status">地図を読み込めません。接続を確認して <button onClick={() => { setTileError(false); tiles.current.redraw() }}>再読み込み</button></div>}
     <div className="map-tools">
       <div className="zoom-tools"><button aria-label="拡大" onClick={() => map.current.zoomIn()}><Plus size={21} /></button><button aria-label="縮小" onClick={() => map.current.zoomOut()}><Minus size={21} /></button></div>
       <button aria-label="現在地を表示" title="現在地を表示" disabled={locating} onClick={() => { setLocating(true); map.current.locate({ timeout: 10000 }) }}><LocateFixed size={21} /></button>
