@@ -52,7 +52,13 @@ export default function MemoryDialog({ entry, editing, onClose, onSave, onDelete
 
   // Keep dismissal explicit: native photo pickers can return a click on the
   // dialog backdrop. Treating that click as cancel would discard the draft.
-  return <dialog ref={dialog} className="memory-dialog" onCancel={event => { event.preventDefault(); if (!busy && !photoBusy) onClose() }} aria-labelledby="dialog-title">
+  return <dialog ref={dialog} className="memory-dialog" onCancel={event => {
+    // React also bubbles a file input's native cancel event here. Only an
+    // actual dialog cancel (Escape) may dismiss the memory being written.
+    if (event.target !== event.currentTarget) return
+    event.preventDefault()
+    if (!busy && !photoBusy) onClose()
+  }} aria-labelledby="dialog-title">
     <div className="dialog-heading"><span className="eyebrow">{isEditing ? (entry.id ? 'EDIT MEMORY' : 'NEW MEMORY') : 'YOUR MEMORY'}</span><button className="icon-button" aria-label="閉じる" onClick={onClose} disabled={busy || photoBusy}><X size={22} /></button></div>
     <div className="dialog-content">
       {isEditing ? <form onSubmit={submit}>
