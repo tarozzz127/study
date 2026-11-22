@@ -50,7 +50,9 @@ export default function MemoryDialog({ entry, editing, onClose, onSave, onDelete
     catch { setError('削除できませんでした。もう一度お試しください。'); setBusy(false) }
   }
 
-  return <dialog ref={dialog} className="memory-dialog" onCancel={event => { event.preventDefault(); if (!busy && !photoBusy) onClose() }} onClick={event => { if (event.target === dialog.current && !busy && !photoBusy) onClose() }} aria-labelledby="dialog-title">
+  // Keep dismissal explicit: native photo pickers can return a click on the
+  // dialog backdrop. Treating that click as cancel would discard the draft.
+  return <dialog ref={dialog} className="memory-dialog" onCancel={event => { event.preventDefault(); if (!busy && !photoBusy) onClose() }} aria-labelledby="dialog-title">
     <div className="dialog-heading"><span className="eyebrow">{isEditing ? (entry.id ? 'EDIT MEMORY' : 'NEW MEMORY') : 'YOUR MEMORY'}</span><button className="icon-button" aria-label="閉じる" onClick={onClose} disabled={busy || photoBusy}><X size={22} /></button></div>
     <div className="dialog-content">
       {isEditing ? <form onSubmit={submit}>
