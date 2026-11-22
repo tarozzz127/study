@@ -116,6 +116,8 @@ h1 span { color: var(--accent); }
 .map-view-switch button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 16px; border-radius: 8px; color: var(--text-muted); font-size: 11px; }
 .map-view-switch button[aria-pressed=true] { color: var(--accent); background: var(--soft); font-weight: 600; }
 .leaflet-tile-pane { filter: saturate(.5); }
+/* Avoid bright tile-boundary seams from Leaflet's additive blend in Chrome. */
+.leaflet-container img.leaflet-tile { mix-blend-mode: normal; }
 .map-tip { position: absolute; z-index: 401; top: 78px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; border: 1px solid var(--border); padding: 10px 14px; border-radius: 30px; font-size: 11px; white-space: nowrap; background: var(--surface); pointer-events: none; }
 .tip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .map-tools { position: absolute; z-index: 401; right: 18px; bottom: 62px; display: flex; flex-direction: column; gap: 10px; }
@@ -253,5 +255,22 @@ dialog h2 { font-size: 24px; line-height: 1.6; font-weight: 600; letter-spacing:
   .marker-option small { font-size: 8px; max-width: 86px; }.marker-check { right: 4px; top: 4px; }
   .dialog-actions .button { padding: 12px; }.dialog-actions .primary { min-width: 145px; }.detail-photo { height: 230px; }
   .backup-actions { flex-direction: column; }.data-note { padding: 14px; }
+}
+/* Scroll the fields, not the save action, on short tablet screens. */
+.memory-dialog.is-editing[open] { display: flex; flex-direction: column; overflow: hidden; }
+.memory-dialog.is-editing .dialog-heading { flex-shrink: 0; }
+.memory-dialog.is-editing .dialog-content { display: contents; }
+.memory-form { display: flex; flex-direction: column; min-height: 0; }
+.memory-form-fields { overflow-y: auto; min-height: 0; padding: 5px 28px 0; overscroll-behavior: contain; }
+.memory-form > .dialog-actions { flex-shrink: 0; padding: 16px 28px 22px; background: var(--surface); }
+.location-picker { margin: 0 0 20px; }
+.location-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; }
+.location-heading strong { font-weight: 500; }
+.location-heading button, .location-center { min-height: 44px; color: var(--accent); font-size: 11px; text-decoration: underline; }
+.location-map { height: 160px; border: 1px solid var(--border); border-radius: 8px; isolation: isolate; z-index: 0; }
+.location-picker p { font-size: 10px; color: var(--text-muted); line-height: 1.8; margin: 8px 0 0; }
+@media (max-width: 760px) {
+  .memory-form-fields { padding: 3px 20px 0; }
+  .memory-form > .dialog-actions { padding: 14px 20px 20px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
