@@ -17,6 +17,8 @@ export default function App() {
   const [filter, setFilter] = useState('all')
   const [locating, setLocating] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [backupError, setBackupError] = useState('')
   const help = useRef(null)
   const importInput = useRef(null)
 
@@ -58,26 +60,36 @@ export default function App() {
     setMemories(current => current.filter(memory => memory.id !== id))
     setSelected(null); setDialog(null); setNotice('思い出を削除しました。')
   }
-  function exportData() {
-    const blob = new Blob([makeBackup(memories)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url; link.download = `たびのあと-${today()}.json`
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
-    setNotice('バックアップを書き出しました。ファイルを大切に保管してください。')
+  async function exportData() {
+    setExporting(true); setBackupError('')
+    try {
+      // The list in this tab can be stale after another tab saves a memory.
+      const latest = await getMemories()
+      const blob = new Blob([makeBackup(latest)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url; link.download = `たびのあと-${today()}.json`
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      help.current.close()
+      setNotice('ダウンロードを開始しました。写真とメモが入ったファイルの保存を確認してください。')
+    } catch { setBackupError('バックアップを作れませんでした。記録は消していません。もう一度お試しください。') }
+    finally { setExporting(false) }
   }
   async function restore(event) {
     const file = event.target.files?.[0]
     if (!file) return
-    setImporting(true)
+    setImporting(true); setBackupError('')
     try {
       if (file.size > 100 * 1024 * 1024) throw new Error('100MB以下のバックアップを選んでください。')
       const entries = parseBackup(await file.text())
-      await importMemories(entries)
+      const summary = await importMemories(entries)
       setMemories(await getMemories()); setStorageError(false)
-      help.current.close(); setNotice(`${entries.length}件の思い出を読み込みました。`)
-    } catch (error) { setNotice(error instanceof SyntaxError ? 'バックアップファイルを読み込めませんでした。' : error.message) }
+      help.current.close()
+      setNotice(summary.added === 0
+        ? summary.unchanged ? 'すでに同じ内容が保存されています。記録は変更していません。' : 'このバックアップには思い出がありません。記録は変更していません。'
+        : `${summary.added}件の思い出を追加しました。${summary.conflicts ? `内容が違う${summary.conflicts}件は、今の記録を残して別の思い出として追加しました。` : ''}${summary.unchanged ? `同じ内容の${summary.unchanged}件は追加していません。` : ''}`)
+    } catch (error) { setBackupError(error instanceof SyntaxError ? 'バックアップファイルを読み込めませんでした。たびのあとで保存したJSONファイルを選んでください。' : error.name === 'QuotaExceededError' ? '空き容量が足りず読み込めませんでした。今の記録はそのままです。バックアップを保管し、端末の空き容量を確認してください。' : `読み込めませんでした。${error.message}`) }
     finally { event.target.value = ''; setImporting(false) }
   }
 
@@ -100,6 +112,6 @@ export default function App() {
     </main>
     {notice && <div className="toast" role="status"><Check size={18} /><span>{notice}</span><button aria-label="通知を閉じる" onClick={() => setNotice('')}><X size={17} /></button></div>}
     {dialog && <MemoryDialog key={dialog.entry.id || 'new'} {...dialog} onClose={() => setDialog(null)} onSave={save} onDelete={remove} />}
-    <dialog ref={help} className="help-dialog" aria-labelledby="help-title" onClick={event => { if (event.target === help.current && !importing) help.current.close() }} onCancel={event => { if (importing) event.preventDefault() }}><div className="dialog-heading"><span className="eyebrow">A LITTLE GUIDE</span><button className="icon-button" aria-label="使い方を閉じる" onClick={() => help.current.close()} disabled={importing}><X size={22} /></button></div><div className="dialog-content"><h2 id="help-title">思い出の残し方</h2><ol className="guide-steps"><li><span>1</span><div><strong>地図で場所をタップ</strong><p>指で動かしたり、広げたりして場所を探せます。</p></div></li><li><span>2</span><div><strong>写真とひとことを添える</strong><p>場所の名前と日付を入れましょう。写真はあとからでも。</p></div></li><li><span>3</span><div><strong>建物か山のマークを置く</strong><p>「地図に残す」で完成。マークをタップすると見返せます。</p></div></li></ol><div className="data-note"><ShieldCheck size={21} /><div><strong>あなたの思い出は、このブラウザに。</strong><p>写真とメモはサーバーに送信しません。端末やブラウザを変えても自動では引き継がれません。ブラウザのデータを消す前に、バックアップを保存してください。</p><p>背景の地図と現在地の取得にはインターネットを使います。</p></div></div><div className="backup-actions"><button className="button secondary" onClick={exportData} disabled={!ready || !memories.length || importing}><ArrowDownToLine size={18} />バックアップを保存</button><button className="button secondary" onClick={() => importInput.current.click()} disabled={importing}><FolderInput size={18} />{importing ? '読み込み中…' : 'バックアップを読込'}</button><input ref={importInput} type="file" accept="application/json,.json" onChange={restore} hidden /></div><p className="backup-hint">読み込みでは今の記録を残し、同じ記録だけを更新します。</p></div></dialog>
+    <dialog ref={help} className="help-dialog" aria-labelledby="help-title" onClick={event => { if (event.target === help.current && !importing && !exporting) help.current.close() }} onCancel={event => { if (importing || exporting) event.preventDefault() }}><div className="dialog-heading"><span className="eyebrow">A LITTLE GUIDE</span><button className="icon-button" aria-label="使い方を閉じる" onClick={() => help.current.close()} disabled={importing || exporting}><X size={22} /></button></div><div className="dialog-content"><h2 id="help-title">思い出の残し方</h2><ol className="guide-steps"><li><span>1</span><div><strong>地図で場所をタップ</strong><p>指で動かしたり、広げたりして場所を探せます。</p></div></li><li><span>2</span><div><strong>写真とひとことを添える</strong><p>場所の名前と日付を入れましょう。写真はあとからでも。</p></div></li><li><span>3</span><div><strong>建物か山のマークを置く</strong><p>「地図に残す」で完成。マークをタップすると見返せます。</p></div></li></ol><div className="data-note"><ShieldCheck size={21} /><div><strong>あなたの思い出は、このブラウザに。</strong><p>写真とメモはサーバーに送信しません。端末やブラウザを変えても自動では引き継がれません。ブラウザのデータを消す前に、バックアップを保存してください。</p><p>アプリの起動・再読み込み、背景の地図と現在地の取得にはインターネットが必要です。通信が切れても、保存済みの記録は消えません。</p></div></div><div className="backup-actions"><button className="button secondary" onClick={exportData} disabled={!ready || storageError || importing || exporting}><ArrowDownToLine size={18} />{exporting ? '書き出し中…' : 'バックアップを保存'}</button><button className="button secondary" onClick={() => importInput.current.click()} disabled={importing || exporting}><FolderInput size={18} />{importing ? '読み込み中…' : 'バックアップを読込'}</button><input ref={importInput} type="file" accept="application/json,.json" onChange={restore} hidden /></div>{backupError && <p role="alert" className="form-error">{backupError}</p>}<p className="backup-hint">読み込みで今の記録は上書きしません。同じ記録で内容が違う場合は、別の思い出として追加します。同じ内容は重複して追加しません。</p></div></dialog>
   </div>
 }
