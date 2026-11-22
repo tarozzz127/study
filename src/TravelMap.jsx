@@ -64,7 +64,8 @@ export default function TravelMap({ memories, selected, onSelect, onAdd, onNotic
         html: renderToStaticMarkup(<div className={`map-object ${placed?.id === entry.id ? 'is-new' : ''}`}><svg className="object-ground" viewBox="0 0 88 42" aria-hidden="true"><path className="ground-edge" d="m5 17 37-13 41 13v8L46 39 5 25z" /><path className="ground-top" d="M5 17 42 4l41 13-37 14z" /><path className="ground-grass" d="m17 19 5-2m43 2 5-2m-24 9 5-2" /></svg><MarkerArt type={entry.type} size={68} /></div>),
         iconSize: [88, 88], iconAnchor: [44, 70],
       })
-      const marker = L.marker([entry.lat, entry.lng], { icon, title: entry.title, alt: `${entry.title}の記録`, keyboard: true }).addTo(layer.current)
+      const marker = L.marker([entry.lat, entry.lng], { icon, keyboard: true }).addTo(layer.current)
+      marker.getElement().setAttribute('aria-label', `${entry.title}の記録`)
       const label = document.createElement('span')
       label.textContent = entry.title
       marker.bindTooltip(label, { direction: 'bottom', offset: [0, 15], className: 'object-label' })
