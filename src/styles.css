@@ -112,8 +112,14 @@ h1 span { color: var(--accent); }
 .loading-state { text-align: center; padding: 50px 15px; color: var(--text-muted); font-size: 12px; }
 .map-area, .map-shell { position: relative; min-width: 0; height: 100%; }
 .map-canvas { position: absolute; inset: 0; background: var(--sea); z-index: 0; font-family: var(--font); }
+.personal-map .map-canvas { background-color: var(--bg); background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 24px 24px; }
+.map-view-switch { position: absolute; z-index: 401; top: 14px; left: 50%; transform: translateX(-50%); display: flex; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 3px 10px var(--shadow); white-space: nowrap; }
+.map-view-switch button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 16px; border-radius: 8px; color: var(--text-muted); font-size: 11px; }
+.map-view-switch button[aria-pressed=true] { color: var(--accent); background: var(--soft); font-weight: 600; }
 .leaflet-tile-pane { filter: saturate(.5); }
-.map-tip { position: absolute; z-index: 401; top: 22px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; border: 1px solid var(--border); padding: 12px 17px; border-radius: 30px; font-size: 11px; white-space: nowrap; background: var(--surface); box-shadow: 0 3px 10px var(--shadow); pointer-events: none; }
+/* Avoid bright tile-boundary seams from Leaflet's additive blend in Chrome. */
+.leaflet-container img.leaflet-tile { mix-blend-mode: normal; }
+.map-tip { position: absolute; z-index: 401; top: 78px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; border: 1px solid var(--border); padding: 10px 14px; border-radius: 30px; font-size: 11px; white-space: nowrap; background: var(--surface); pointer-events: none; }
 .tip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .map-tools { position: absolute; z-index: 401; right: 18px; bottom: 62px; display: flex; flex-direction: column; gap: 10px; }
 .map-tools button { width: 44px; height: 44px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 7px var(--shadow); }
@@ -126,16 +132,32 @@ h1 span { color: var(--accent); }
 .map-bottom button { font-size: 10px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; pointer-events: auto; }
 .leaflet-control-attribution { font-size: 9px !important; background: var(--surface) !important; color: var(--text-muted) !important; }
 .leaflet-control-attribution a { color: var(--accent) !important; }
-.memory-pin { display: grid; place-items: center; border-radius: 50%; }
-.memory-pin:hover, .memory-pin.is-selected { background: var(--surface); box-shadow: 0 2px 12px var(--shadow); }
+.memory-pin { border-radius: 12px; }
+.map-object { position: relative; width: 88px; height: 88px; transform-origin: 50% 75%; }
+.map-object > .marker-art { position: absolute; top: 3px; left: 10px; }
+.object-ground { position: absolute; width: 88px; height: 42px; bottom: 4px; left: 0; overflow: visible; filter: drop-shadow(0 4px 2px var(--shadow)); }
+.ground-edge { fill: var(--mountain-back); }
+.ground-top { fill: var(--soft); stroke: var(--mountain-back); stroke-width: 1; }
+.ground-grass { stroke: var(--tree); stroke-width: 2; stroke-linecap: round; opacity: .35; }
+.memory-pin:hover .ground-top, .memory-pin.is-selected .ground-top { stroke: var(--accent); stroke-width: 2; }
+.object-label.leaflet-tooltip { color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 2px 8px var(--shadow); font-family: var(--font); width: max-content; max-width: 180px; white-space: normal; overflow-wrap: anywhere; }
+.overlap-dialog { width: min(440px, calc(100% - 32px)); }
+.overlap-options { max-height: 45dvh; overflow-y: auto; }
+.overlap-options button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 8px; min-height: 66px; text-align: left; border-radius: 8px; }
+.overlap-options button:hover, .overlap-options button:focus-visible { background: var(--soft); }
+.overlap-options button > span { min-width: 0; }
+.overlap-options strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
+.overlap-options small { display: block; margin-top: 5px; font-size: 10px; color: var(--text-muted); }
+.map-object.is-new { animation: place-object .45s ease-out; }
+@keyframes place-object { from { opacity: 0; transform: translateY(-18px) scale(.8); } 65% { opacity: 1; transform: translateY(2px) scale(1.04); } to { opacity: 1; transform: none; } }
 .marker-shadow { fill: var(--text); opacity: .1; }
 .building-front { fill: var(--building); }.building-side { fill: var(--building-side); }.roof { fill: var(--roof); }.roof-edge { fill: var(--roof-edge); }.window { fill: var(--window); }.door { fill: var(--door); }
 .mountain-main { fill: var(--mountain); }.mountain-side { fill: var(--mountain-side); }.mountain-back { fill: var(--mountain-back); }.snow { fill: var(--snow); }.tree { fill: var(--tree); }
-.picking-banner { position: absolute; top: 16px; left: 14px; right: 14px; z-index: 402; display: flex; align-items: center; justify-content: center; gap: 9px; background: var(--accent); color: var(--accent-fg); padding: 5px 13px; min-height: 48px; border-radius: 10px; font-size: 12px; box-shadow: 0 3px 12px var(--shadow); }
+.picking-banner { position: absolute; top: 126px; left: 14px; right: 14px; z-index: 402; display: flex; align-items: center; justify-content: center; gap: 9px; background: var(--accent); color: var(--accent-fg); padding: 5px 13px; min-height: 48px; border-radius: 10px; font-size: 12px; box-shadow: 0 3px 12px var(--shadow); }
 .picking-banner button { color: inherit; min-width: 44px; min-height: 44px; display: grid; place-items: center; margin-left: auto; }
 .picking-banner > span { flex: 1; }
 .is-picking .map-canvas { cursor: crosshair; }
-.tile-error { position: absolute; left: 14px; top: 78px; right: 14px; z-index: 401; padding: 12px; background: var(--surface); border-radius: 7px; font-size: 11px; box-shadow: 0 2px 8px var(--shadow); }
+.tile-error { position: absolute; left: 14px; bottom: 120px; right: 76px; z-index: 401; padding: 12px; background: var(--surface); border-radius: 7px; font-size: 11px; box-shadow: 0 2px 8px var(--shadow); }
 .tile-error button { color: var(--accent); text-decoration: underline; min-height: 44px; }
 .page-footer { display: flex; align-items: center; justify-content: space-between; padding: 17px 0; color: var(--text-muted); font-size: 10px; }
 .page-footer span, .page-footer button { display: inline-flex; align-items: center; gap: 6px; }
@@ -215,7 +237,7 @@ dialog h2 { font-size: 24px; line-height: 1.6; font-weight: 600; letter-spacing:
   .sidebar-heading { margin: 21px 19px 17px; }.filters { margin: 0 18px; }
   .empty-state { padding-top: 10px; }.empty-illustration { height: 145px; transform: scale(.95); }
   .sidebar-footer { margin: 0 14px; gap: 6px; }.sidebar-footer p, .sidebar-footer small { font-size: 8px; }
-  .map-tip { font-size: 10px; padding: 11px 13px; top: 17px; }.map-bottom > span { display: none; }.map-bottom { justify-content: flex-start; }
+  .map-tip { font-size: 10px; padding: 11px 13px; }.map-bottom > span { display: none; }.map-bottom { justify-content: flex-start; }
 }
 @media (max-width: 760px) {
   .app-header { height: 70px; padding: 0 18px; }.brand { font-size: 21px; gap: 10px; }.brand-icon { width: 38px; height: 40px; }.brand small { font-size: 7px; }
@@ -252,4 +274,4 @@ dialog h2 { font-size: 24px; line-height: 1.6; font-weight: 600; letter-spacing:
   .memory-form-fields { padding: 3px 20px 0; }
   .memory-form > .dialog-actions { padding: 14px 20px 20px; }
 }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
