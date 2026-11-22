@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Camera, Check, ImagePlus, MapPin, Trash2, X } from 'lucide-react'
 import { MarkerArt } from './MarkerArt.jsx'
 import { preparePhoto } from './lib/photo.js'
+import LocationPicker from './LocationPicker.jsx'
 
 export function today() {
   const now = new Date()
@@ -52,7 +53,7 @@ export default function MemoryDialog({ entry, editing, onClose, onSave, onDelete
 
   // Keep dismissal explicit: native photo pickers can return a click on the
   // dialog backdrop. Treating that click as cancel would discard the draft.
-  return <dialog ref={dialog} className="memory-dialog" onCancel={event => {
+  return <dialog ref={dialog} className={`memory-dialog ${isEditing ? 'is-editing' : ''}`} onCancel={event => {
     // React also bubbles a file input's native cancel event here. Only an
     // actual dialog cancel (Escape) may dismiss the memory being written.
     if (event.target !== event.currentTarget) return
@@ -61,8 +62,10 @@ export default function MemoryDialog({ entry, editing, onClose, onSave, onDelete
   }} aria-labelledby="dialog-title">
     <div className="dialog-heading"><span className="eyebrow">{isEditing ? (entry.id ? 'EDIT MEMORY' : 'NEW MEMORY') : 'YOUR MEMORY'}</span><button className="icon-button" aria-label="閉じる" onClick={onClose} disabled={busy || photoBusy}><X size={22} /></button></div>
     <div className="dialog-content">
-      {isEditing ? <form onSubmit={submit}>
+      {isEditing ? <form className="memory-form" onSubmit={submit}>
+        <div className="memory-form-fields">
         <h2 id="dialog-title">この場所の、思い出を。</h2><p className="dialog-intro">写真とひとこと。小さな記録からはじめよう。</p>
+        <LocationPicker lat={draft.lat} lng={draft.lng} type={draft.type} onChange={position => setDraft(current => ({ ...current, ...position }))} />
         <div className="photo-picker">
           {draft.photo ? <><img src={draft.photo} alt="選んだ旅の写真" /><label className="photo-replace"><Camera size={17} />写真を変更<input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={choosePhoto} disabled={photoBusy || busy} /></label><button type="button" className="photo-remove icon-button" aria-label="写真を外す" onClick={() => update('photo', '')} disabled={photoBusy || busy}><X size={18} /></button></> : <label className="photo-empty"><ImagePlus size={29} strokeWidth={1.5} /><strong>{photoBusy ? '写真を準備しています…' : '写真を選ぶ'}</strong><span>写真ライブラリから · あとでも追加できます</span><input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={choosePhoto} disabled={photoBusy || busy} /></label>}
         </div>
@@ -71,6 +74,7 @@ export default function MemoryDialog({ entry, editing, onClose, onSave, onDelete
         <fieldset className="marker-picker"><legend>地図に置くマーク</legend><div className="marker-options">{[['building', '建物', '街歩きや、お気に入りのお店に'], ['mountain', '山', '自然や、忘れられない景色に']].map(([type, name, description]) => <label className={`marker-option ${draft.type === type ? 'checked' : ''}`} key={type}><input type="radio" name="marker" value={type} checked={draft.type === type} onChange={() => update('type', type)} /><MarkerArt type={type} /><span><strong>{name}</strong><small>{description}</small></span>{draft.type === type && <Check className="marker-check" size={16} />}</label>)}</div></fieldset>
         <p className="coordinate-note"><MapPin size={14} />選んだ場所 {draft.lat.toFixed(4)}, {draft.lng.toFixed(4)}</p>
         {error && <p role="alert" className="form-error">{error}</p>}
+        </div>
         <div className="dialog-actions"><button type="button" className="button secondary" onClick={onClose} disabled={busy || photoBusy}>キャンセル</button><button className="button primary" type="submit" disabled={busy || photoBusy}><Check size={18} />{busy ? '保存しています…' : photoBusy ? '写真を準備中…' : '地図に残す'}</button></div>
       </form> : <>
         <div className="detail-photo">{entry.photo ? <img src={entry.photo} alt={`${entry.title}の写真`} /> : <MarkerArt type={entry.type} size={100} />}</div>

@@ -233,4 +233,21 @@ dialog h2 { font-size: 24px; line-height: 1.6; font-weight: 600; letter-spacing:
   .dialog-actions .button { padding: 12px; }.dialog-actions .primary { min-width: 145px; }.detail-photo { height: 230px; }
   .backup-actions { flex-direction: column; }.data-note { padding: 14px; }
 }
+/* Scroll the fields, not the save action, on short tablet screens. */
+.memory-dialog.is-editing[open] { display: flex; flex-direction: column; overflow: hidden; }
+.memory-dialog.is-editing .dialog-heading { flex-shrink: 0; }
+.memory-dialog.is-editing .dialog-content { display: contents; }
+.memory-form { display: flex; flex-direction: column; min-height: 0; }
+.memory-form-fields { overflow-y: auto; min-height: 0; padding: 5px 28px 0; overscroll-behavior: contain; }
+.memory-form > .dialog-actions { flex-shrink: 0; padding: 16px 28px 22px; background: var(--surface); }
+.location-picker { margin: 0 0 20px; }
+.location-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; }
+.location-heading strong { font-weight: 500; }
+.location-heading button, .location-center { min-height: 44px; color: var(--accent); font-size: 11px; text-decoration: underline; }
+.location-map { height: 160px; border: 1px solid var(--border); border-radius: 8px; isolation: isolate; z-index: 0; }
+.location-picker p { font-size: 10px; color: var(--text-muted); line-height: 1.8; margin: 8px 0 0; }
+@media (max-width: 760px) {
+  .memory-form-fields { padding: 3px 20px 0; }
+  .memory-form > .dialog-actions { padding: 14px 20px 20px; }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
