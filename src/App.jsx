@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDownToLine, ArrowRight, BookOpen, Check, ChevronRight, CircleHelp, FolderInput, Map, MapPin, Plus, ShieldCheck, Sparkles, X } from 'lucide-react'
 import TravelMap from './TravelMap.jsx'
 import MemoryDialog, { formatDate, today } from './MemoryDialog.jsx'
+import MemoryThumbnail from './MemoryThumbnail.jsx'
 import { MarkerArt } from './MarkerArt.jsx'
 import { deleteMemory, getMemories, importMemories, makeBackup, parseBackup, saveMemory } from './lib/storage.js'
 
@@ -30,8 +31,8 @@ export default function App() {
     return () => clearTimeout(timeout)
   }, [notice])
 
-  const sorted = [...memories].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
-  const visible = sorted.filter(entry => filter === 'all' || entry.type === filter)
+  const sorted = useMemo(() => [...memories].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)), [memories])
+  const visible = useMemo(() => sorted.filter(entry => filter === 'all' || entry.type === filter), [sorted, filter])
   function add(position) {
     if (!ready || storageError || dialog) return
     setPicking(false)
@@ -47,7 +48,10 @@ export default function App() {
     const saved = { ...entry, id: entry.id || crypto.randomUUID() }
     await saveMemory(saved)
     setMemories(current => [...current.filter(memory => memory.id !== saved.id), saved])
-    setSelected(saved); setDialog(null); setFilter('all')
+    setSelected(saved); setDialog(null)
+    // Keep the browsing context after edits, following a changed marker type
+    // only when the saved memory would otherwise disappear from this filter.
+    setFilter(current => current === 'all' || current === saved.type ? current : saved.type)
     setNotice('思い出を地図に残しました。')
     navigator.storage?.persist?.().catch(() => {})
   }
@@ -95,14 +99,14 @@ export default function App() {
       <section className="page-heading"><div><p className="eyebrow">PLACES THAT STAY WITH YOU</p><h1>あなたの旅を、<span>地図に。</span></h1><p className="heading-caption">何気ない寄り道も、忘れられない景色も。</p></div><button className="button primary add-button" onClick={startPicking} disabled={!ready || storageError}><Plus size={20} />思い出を残す</button></section>
       {storageError && <p role="alert" className="storage-error">このブラウザでは記録を読み込めませんでした。通常モードで開き直し、ブラウザのストレージを有効にしてください。データの上書きを防ぐため、新規保存は停止しています。</p>}
       <section className={`journal-layout ${picking ? 'is-picking' : ''}`} aria-label="旅の記録">
-        <aside className="journal-sidebar"><div className="sidebar-heading"><div><BookOpen size={19} /><h2>旅の思い出</h2></div><span className="memory-count">{memories.length}<small>か所</small></span></div>
-          <div className="filters" role="group" aria-label="マークで絞り込み">{[['all', 'すべて'], ['building', '建物'], ['mountain', '山']].map(([value, label]) => <button key={value} aria-pressed={filter === value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div>
-          <div className="memory-list">
-            {!ready ? <p className="loading-state" role="status">思い出をひらいています…</p> : !memories.length ? <div className="empty-state"><div className="empty-illustration"><span className="illustration-sun" /><div className="illustration-mountain"><MarkerArt type="mountain" size={95} /></div><svg className="illustration-trail" viewBox="0 0 180 80" aria-hidden="true"><path d="M16 62c30 0 21-45 63-34s28 40 77 13" /></svg><div className="illustration-building"><MarkerArt type="building" size={80} /></div><span className="illustration-star">+</span></div><p className="empty-eyebrow">まだ、まっしろな旅の地図。</p><h3>最初の思い出を<br />残してみませんか</h3><p>訪れた場所に、写真とひとこと。<br />あなただけの地図が育っていきます。</p><button className="empty-start" onClick={startPicking} disabled={storageError}>地図から場所を選ぶ<ArrowRight size={16} /></button></div> : !visible.length ? <div className="filter-empty"><MarkerArt type={filter} /><p>このマークの思い出は<br />まだありません。</p></div> : <div className="entry-list">{visible.map(entry => <button key={entry.id} className={`entry-card ${selected?.id === entry.id ? 'selected' : ''}`} onClick={() => select(entry)}><div className="entry-thumb">{entry.photo ? <img src={entry.photo} alt="" /> : <MarkerArt type={entry.type} size={46} />}</div><span className="entry-copy"><small>{formatDate(entry.date)}</small><strong>{entry.title}</strong><span>{entry.note || (entry.type === 'building' ? '街で出会った思い出' : '自然の中の思い出')}</span></span><ChevronRight size={15} /></button>)}</div>}
+        <aside className="journal-sidebar"><div className="sidebar-heading"><div><BookOpen size={19} /><h2>旅の思い出</h2></div><span className="memory-count" aria-label={`${visible.length}か所を表示、全${memories.length}か所`}>{visible.length}<small>か所{filter !== 'all' && ` / ${memories.length}`}</small></span></div>
+          <div className="filters" role="group" aria-label="マークで絞り込み">{[['all', 'すべて'], ['building', '建物'], ['mountain', '山']].map(([value, label]) => <button key={value} aria-pressed={filter === value} className={filter === value ? 'active' : ''} onClick={() => { setFilter(value); setSelected(null) }}>{label}</button>)}</div>
+          <div className="memory-list" key={filter}>
+            {!ready ? <p className="loading-state" role="status">思い出をひらいています…</p> : !memories.length ? <div className="empty-state"><div className="empty-illustration"><span className="illustration-sun" /><div className="illustration-mountain"><MarkerArt type="mountain" size={95} /></div><svg className="illustration-trail" viewBox="0 0 180 80" aria-hidden="true"><path d="M16 62c30 0 21-45 63-34s28 40 77 13" /></svg><div className="illustration-building"><MarkerArt type="building" size={80} /></div><span className="illustration-star">+</span></div><p className="empty-eyebrow">まだ、まっしろな旅の地図。</p><h3>最初の思い出を<br />残してみませんか</h3><p>訪れた場所に、写真とひとこと。<br />あなただけの地図が育っていきます。</p><button className="empty-start" onClick={startPicking} disabled={storageError}>地図から場所を選ぶ<ArrowRight size={16} /></button></div> : !visible.length ? <div className="filter-empty"><MarkerArt type={filter} /><p>このマークの思い出は<br />まだありません。</p></div> : <div className="entry-list">{visible.map(entry => <button key={entry.id} className={`entry-card ${selected?.id === entry.id ? 'selected' : ''}`} onClick={() => select(entry)}><MemoryThumbnail photo={entry.photo} type={entry.type} /><span className="entry-copy"><small>{formatDate(entry.date)}</small><strong>{entry.title}</strong><span>{entry.note || (entry.type === 'building' ? '街で出会った思い出' : '自然の中の思い出')}</span></span><ChevronRight size={15} /></button>)}</div>}
           </div>
           <div className="sidebar-footer"><ShieldCheck size={17} /><p>思い出はこのブラウザに保存されます<small>ほかの端末とは自動で共有されません</small></p></div>
         </aside>
-        <div className="map-area"><TravelMap memories={memories} selected={selected} onSelect={select} onAdd={add} onNotice={setNotice} locating={locating} setLocating={setLocating} />{picking && <div className="picking-banner" role="status"><MapPin size={19} /><span>思い出を残したい場所をタップ</span><button aria-label="場所選びをやめる" onClick={() => setPicking(false)}><X size={19} /></button></div>}</div>
+        <div className="map-area"><TravelMap memories={visible} selected={selected} onSelect={select} onAdd={add} onNotice={setNotice} locating={locating} setLocating={setLocating} />{picking && <div className="picking-banner" role="status"><MapPin size={19} /><span>思い出を残したい場所をタップ</span><button aria-label="場所選びをやめる" onClick={() => setPicking(false)}><X size={19} /></button></div>}</div>
       </section>
       <footer className="page-footer"><span><Sparkles size={14} />旅の数だけ、あなたらしい地図に。</span><button onClick={() => help.current.showModal()}>使い方・データの保存<ArrowRight size={14} /></button></footer>
     </main>
