@@ -21,11 +21,13 @@ import {
   X,
 } from "lucide-react";
 import PieceArt from "./PieceArt.jsx";
+import PieceOptions from "./PieceOptions.jsx";
 import DioramaMap from "./DioramaMap.jsx";
 import PlaceSearch from "./PlaceSearch.jsx";
 import { placementForCandidate } from "./lib/place-search.js";
 import {
   PIECES,
+  looksFor,
   cellKey,
   makeDioramaBackup,
   parseDioramaBackup,
@@ -77,12 +79,8 @@ function EntryForm({ entry, busy, error, onSave, onClose }) {
       title={entry.id ? "思い出を編集" : "旅のかけらを置く"}
       onClose={onClose}
     >
-      <div className="dialog-art">
-        <PieceArt type={draft.piece} />
-        <span>{pieceFor(draft.piece).name}</span>
-      </div>
       <p className="eyebrow">A PIECE OF YOUR JOURNEY</p>
-      <h2>{entry.id ? "思い出を、書きなおす。" : "どんな場所に行った？"}</h2>
+      <h2>{entry.id ? "思い出を、わたし好みに。" : "どんな場所に行った？"}</h2>
       <p className="muted">
         {prefectureFor(entry.prefecture)?.name || "前の箱庭の思い出"} ·
         その日のことを、小さなかたちに。
@@ -98,7 +96,7 @@ function EntryForm({ entry, busy, error, onSave, onClose }) {
           <select
             value={draft.piece}
             onChange={(event) =>
-              setDraft({ ...draft, piece: event.target.value })
+              setDraft({ ...draft, piece: event.target.value, variant: 0 })
             }
           >
             {PIECES.map((piece) => (
@@ -108,10 +106,15 @@ function EntryForm({ entry, busy, error, onSave, onClose }) {
             ))}
           </select>
         </label>
+        <PieceOptions
+          piece={draft.piece}
+          value={draft}
+          onChange={setDraft}
+          disabled={busy}
+        />
         <label>
           場所の名前 <span className="required">必須</span>
           <input
-            autoFocus
             required
             maxLength={60}
             placeholder="例：京都の小さな喫茶店"
@@ -164,6 +167,7 @@ function download(text, name) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 export default function App() {
+  const [toolLook, setToolLook] = useState({ variant: 0, size: 1 });
   const [prefectureId, setPrefectureId] = useState(null);
   const [focusPlace, setFocusPlace] = useState(null);
   const [places, setPlaces] = useState([]),
@@ -239,6 +243,7 @@ export default function App() {
   }
   function choosePiece(id) {
     setTool(id);
+    setToolLook({ variant: 0, size: 1 });
     setMoving(null);
     setError("");
     setPanel("build");
@@ -269,6 +274,7 @@ export default function App() {
       setSelected({
         ...cell,
         piece: tool,
+        ...toolLook,
         title: "",
         note: "",
         date: today(),
@@ -459,6 +465,15 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              {tool && !moving && (
+                <PieceOptions
+                  compact
+                  piece={tool}
+                  value={toolLook}
+                  onChange={setToolLook}
+                  disabled={!ready || fatal || busy}
+                />
+              )}
               <div className="catalog-note">
                 <Sparkles size={16} />
                 <p>
@@ -491,7 +506,7 @@ export default function App() {
                       setConfirmDelete(false);
                     }}
                   >
-                    <PieceArt type={entry.piece} />
+                    <PieceArt type={entry.piece} variant={entry.variant} />
                     <span>
                       <strong>{entry.title}</strong>
                       <small>
@@ -714,7 +729,7 @@ export default function App() {
       {dialog === "detail" && selected && (
         <Modal title={selected.title} onClose={close}>
           <div className="detail-hero">
-            <PieceArt type={selected.piece} />
+            <PieceArt type={selected.piece} variant={selected.variant} />
             <span>{pieceFor(selected.piece).name}</span>
           </div>
           <p className="eyebrow">A LITTLE MEMORY</p>
@@ -724,10 +739,14 @@ export default function App() {
             {prefectureFor(selected.prefecture)?.name ||
               "県はまだ未設定"} · {selected.date.replaceAll("-", ".")}
           </p>
+          <p className="muted">
+            {looksFor(selected.piece)[selected.variant ?? 0]} · サイズ{" "}
+            {Math.round((selected.size ?? 1) * 100)}%
+          </p>
           {selected.location && (
             <p className="muted">
               検索した実際の位置に配置済み ·
-              日付やパーツは「編集」で変えられます
+              日付や見た目は「編集・サイズ」で変えられます
             </p>
           )}
           <p className="detail-note">
@@ -736,7 +755,7 @@ export default function App() {
           <div className="detail-actions">
             <button className="secondary" onClick={() => setDialog("form")}>
               <Pencil size={16} />
-              編集
+              編集・サイズ
             </button>
             <button
               className="secondary"
@@ -840,7 +859,10 @@ export default function App() {
             </li>
           </ol>
           <p className="help-footnote">
-            場所の名前で検索して候補を選ぶと、その実際の位置にパーツを自動配置します。日付は今日で保存され、「編集」で変更できます。検索で選ばれたパーツも変更できます。
+            場所の名前で検索して候補を選ぶと、その実際の位置にパーツを自動配置します。日付は今日で保存され、「編集・サイズ」で変更できます。検索で選ばれたパーツも変更できます。
+          </p>
+          <p className="help-footnote">
+            パーツは14種類、それぞれ3つの見た目から選べます。「編集・サイズ」で25〜300%の好きな大きさに調整できます。見た目とサイズは移動やバックアップでもそのまま残ります。
           </p>
           <p className="help-footnote">
             置いたパーツをタップすると、編集・移動・削除ができます。「移動」中に県を選び直すと、別の県へ移せます。拡大後は指で地図をスクロールできます。キーボードでは矢印キーとEnterが使えます。

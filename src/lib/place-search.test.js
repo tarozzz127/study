@@ -60,7 +60,13 @@ test("landmarks receive appropriate pieces and transport stops are not candidate
     ["tourism", "camp_site", "キャンプ場", "camp"],
     ["amenity", "cafe", "喫茶", "cafe"],
     ["man_made", "tower", "東京タワー", "tower"],
-    ["tourism", "hotel", "旅館", "house"],
+    ["tourism", "hotel", "旅館", "hotel"],
+    ["historic", "castle", "松本城", "castle"],
+    ["man_made", "bridge", "錦帯橋", "bridge"],
+    ["railway", "station", "東京駅", "station"],
+    ["waterway", "waterfall", "華厳の滝", "waterfall"],
+    ["leisure", "garden", "ラベンダー畑", "flowers"],
+    ["building", "yes", "街の建物", "house"],
   ])
     assert.equal(pieceForPlace({ osm_key, osm_value, name }), expected);
   const bus = {

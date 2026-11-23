@@ -34,7 +34,8 @@ function PrefectureCanvas({
       ? prefecture.main
       : prefecture;
   const span = bounds ? Math.max(bounds.width, bounds.height) : 510;
-  const pad = span * 0.18;
+  // Leave room for the largest (300%) artwork, including towers on the edge.
+  const pad = span * 0.34;
   const box = prefecture
     ? [
         bounds.minX - pad,
@@ -207,7 +208,13 @@ function PrefectureCanvas({
               <g
                 key={place.id}
                 transform={
-                  "translate(" + x + " " + y + ") scale(" + span / 1000 + ")"
+                  "translate(" +
+                  x +
+                  " " +
+                  y +
+                  ") scale(" +
+                  (span / 1000) * (place.size ?? 1) +
+                  ")"
                 }
                 className={
                   "map-piece " + (moving?.id === place.id ? "moving" : "")
@@ -228,8 +235,15 @@ function PrefectureCanvas({
                 <title>
                   {place.title} · {place.date}
                 </title>
-                <circle cy="-22" r="38" fill="transparent" />
-                <PieceShape type={place.piece} />
+                <circle
+                  cy="-22"
+                  r="30"
+                  fill="transparent"
+                  stroke="transparent"
+                  strokeWidth="44"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <PieceShape type={place.piece} variant={place.variant} />
               </g>
             );
           })}

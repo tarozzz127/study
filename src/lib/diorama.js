@@ -57,7 +57,68 @@ export const PIECES = [
     color: "#cfad70",
     hint: "外で過ごした、とっておきの一日",
   },
+  {
+    id: "castle",
+    name: "お城",
+    category: "building",
+    color: "#7d8c9c",
+    hint: "歴史を感じる、お城や城跡に",
+  },
+  {
+    id: "hotel",
+    name: "宿・ホテル",
+    category: "building",
+    color: "#b48d71",
+    hint: "泊まったホテルや温泉旅館に",
+  },
+  {
+    id: "bridge",
+    name: "橋",
+    category: "building",
+    color: "#b16e5d",
+    hint: "川や海を渡った思い出に",
+  },
+  {
+    id: "station",
+    name: "駅",
+    category: "building",
+    color: "#658c98",
+    hint: "旅のはじまりや、途中下車に",
+  },
+  {
+    id: "waterfall",
+    name: "滝",
+    category: "nature",
+    color: "#69a9b6",
+    hint: "水音が心に残る場所に",
+  },
+  {
+    id: "flowers",
+    name: "花畑",
+    category: "nature",
+    color: "#bb7c9b",
+    hint: "季節の花に出会った場所に",
+  },
 ];
+export const MIN_PIECE_SIZE = 0.25;
+export const MAX_PIECE_SIZE = 3;
+const LOOKS = {
+  house: ["赤い屋根", "街の家", "ログハウス"],
+  cafe: ["街角カフェ", "ガラスのカフェ", "テラス席"],
+  temple: ["お寺", "赤い鳥居", "五重塔"],
+  tower: ["展望タワー", "赤い鉄塔", "灯台"],
+  mountain: ["雪の山", "緑の山", "火山"],
+  forest: ["針葉樹の森", "桜の公園", "紅葉の森"],
+  lake: ["静かな湖", "青い海", "ボートの湖"],
+  camp: ["三角テント", "ドームテント", "キャンピングカー"],
+  castle: ["日本のお城", "石造りのお城", "緑の城跡"],
+  hotel: ["街のホテル", "温泉旅館", "リゾート"],
+  bridge: ["赤い太鼓橋", "つり橋", "石のアーチ橋"],
+  station: ["赤い屋根の駅", "街の駅", "木造の小さな駅"],
+  waterfall: ["一筋の滝", "幅広の滝", "段々の滝"],
+  flowers: ["チューリップ", "ラベンダー", "ひまわり"],
+};
+export const looksFor = (piece) => LOOKS[piece] || LOOKS.house;
 export const pieceFor = (id) =>
   PIECES.find((piece) => piece.id === id) || PIECES[0];
 export const today = () => {
@@ -80,6 +141,14 @@ export function validatePlaces(entries) {
       entry.id.length > 100 ||
       ids.has(entry.id) ||
       !PIECES.some((piece) => piece.id === entry.piece) ||
+      (entry.variant !== undefined &&
+        (!Number.isInteger(entry.variant) ||
+          entry.variant < 0 ||
+          entry.variant >= looksFor(entry.piece).length)) ||
+      (entry.size !== undefined &&
+        (!Number.isFinite(entry.size) ||
+          entry.size < MIN_PIECE_SIZE ||
+          entry.size > MAX_PIECE_SIZE)) ||
       (entry.grid !== undefined &&
         (entry.grid !== "geo" || !entry.prefecture)) ||
       (entry.location !== undefined &&
@@ -127,6 +196,8 @@ export function validatePlaces(entries) {
       title: title.trim(),
       note,
       date,
+      ...(entry.variant !== undefined ? { variant: entry.variant } : {}),
+      ...(entry.size !== undefined ? { size: entry.size } : {}),
       ...(entry.grid ? { grid: entry.grid } : {}),
       ...(entry.location
         ? {
@@ -148,12 +219,12 @@ export function validatePlaces(entries) {
   });
 }
 export const makeDioramaBackup = (places) =>
-  JSON.stringify({ app: "tabi-no-ato-diorama", version: 3, places }, null, 2);
+  JSON.stringify({ app: "tabi-no-ato-diorama", version: 4, places }, null, 2);
 export function parseDioramaBackup(text) {
   const backup = JSON.parse(text);
   if (
     backup?.app !== "tabi-no-ato-diorama" ||
-    ![1, 2, 3].includes(backup.version)
+    ![1, 2, 3, 4].includes(backup.version)
   )
     throw new Error(
       "箱庭のバックアップファイルを選んでください。前の旅ログとは形式が異なります。",
