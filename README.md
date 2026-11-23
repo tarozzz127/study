@@ -53,6 +53,8 @@ npm run build  # 公開用ファイルをdistに生成
 npm start      # 公開用ファイルをポート3000で確認
 ```
 
+main に push すると GitHub Actions が GitHub Pages（https://tarozzz127.github.io/study/ ）へ自動で公開します。
+
 `npm start` は先に `npm run build` が必要です。公開時はHTTPSと同一のURLを維持してください。保存した記録はURL（origin）ごとに別になります。
 
 ### ファイルの役割

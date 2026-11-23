@@ -94,7 +94,7 @@ export default function App() {
   }
 
   return <div className="app">
-    <header className="app-header"><a className="brand" href="/" aria-label="たびのあと ホーム"><span className="brand-icon"><Map size={25} strokeWidth={1.7} /></span><span>たびのあと<small>YOUR LITTLE TRAVEL JOURNAL</small></span></a><div className="header-actions"><span className="private-label"><ShieldCheck size={16} />自分だけの旅の記録</span><button className="help-button" onClick={() => help.current.showModal()}><CircleHelp size={19} /><span>使い方</span></button></div></header>
+    <header className="app-header"><a className="brand" href={import.meta.env.BASE_URL} aria-label="たびのあと ホーム"><span className="brand-icon"><Map size={25} strokeWidth={1.7} /></span><span>たびのあと<small>YOUR LITTLE TRAVEL JOURNAL</small></span></a><div className="header-actions"><span className="private-label"><ShieldCheck size={16} />自分だけの旅の記録</span><button className="help-button" onClick={() => help.current.showModal()}><CircleHelp size={19} /><span>使い方</span></button></div></header>
     <main>
       <section className="page-heading"><div><p className="eyebrow">PLACES THAT STAY WITH YOU</p><h1>あなたの旅を、<span>地図に。</span></h1><p className="heading-caption">何気ない寄り道も、忘れられない景色も。</p></div><button className="button primary add-button" onClick={startPicking} disabled={!ready || storageError}><Plus size={20} />思い出を残す</button></section>
       {storageError && <p role="alert" className="storage-error">このブラウザでは記録を読み込めませんでした。通常モードで開き直し、ブラウザのストレージを有効にしてください。データの上書きを防ぐため、新規保存は停止しています。</p>}
