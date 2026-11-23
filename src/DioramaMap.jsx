@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Minus, Plus, Scan } from "lucide-react";
 import { PieceShape } from "./PieceArt.jsx";
 import { pieceFor } from "./lib/diorama.js";
@@ -260,6 +260,24 @@ export default function DioramaMap({
     );
   });
   const scroll = useRef(null);
+  useEffect(() => {
+    if (!focusPlace) return;
+    // Search results can be above a tall map, especially on landscape iPad.
+    // Reveal the actual new piece after both the map and results list update.
+    const frame = requestAnimationFrame(() => {
+      const marker = [
+        ...(scroll.current?.querySelectorAll("[data-place-id]") || []),
+      ].find(
+        (element) => element.getAttribute("data-place-id") === focusPlace.id,
+      );
+      marker?.scrollIntoView({
+        block: "center",
+        inline: "center",
+        behavior: "instant",
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusPlace]);
   const prefecture = prefectureFor(prefectureId);
   const counts = useMemo(
     () =>

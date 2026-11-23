@@ -575,7 +575,10 @@ export default function App() {
               onCell={onCell}
               disabled={!ready || fatal || busy}
               prefectureId={prefectureId}
-              onPrefecture={setPrefectureId}
+              onPrefecture={(id) => {
+                setFocusPlace(null);
+                setPrefectureId(id);
+              }}
               focusPlace={
                 focusPlace?.prefecture === prefectureId ? focusPlace : null
               }
@@ -761,6 +764,7 @@ export default function App() {
               className="text-button"
               onClick={() => {
                 setPrefectureId(selected.prefecture);
+                setFocusPlace(selected);
                 close();
               }}
             >
