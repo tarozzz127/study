@@ -130,8 +130,8 @@ svg {
   flex-shrink: 0;
 }
 .icon-button {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -216,7 +216,7 @@ svg {
 }
 .category-tabs button {
   font-size: 10px;
-  min-height: 34px;
+  min-height: 44px;
   border-radius: 20px;
   flex: 1;
   color: #8b9788;
@@ -501,8 +501,8 @@ svg {
   overflow: hidden;
 }
 .zoom-controls button {
-  width: 37px;
-  height: 35px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   color: #819173;
@@ -1253,15 +1253,13 @@ textarea {
   }
   .map-scroll {
     min-height: 350px;
-    display: flex;
-    align-items: center;
   }
   .diorama {
     flex-shrink: 0;
   }
   .map-bottom {
     padding: 0 14px 13px;
-    height: 52px;
+    height: 60px;
   }
   .map-bottom > span {
     font-size: 8px;
@@ -1324,8 +1322,8 @@ textarea {
     display: none;
   }
   .icon-button {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
   }
   .workspace {
     display: flex;
@@ -1372,8 +1370,8 @@ textarea {
     font-size: 7px;
   }
   .zoom-controls button {
-    width: 33px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
   }
   .placement-guide {
     min-height: 76px;
@@ -1467,7 +1465,7 @@ textarea {
     margin: 0 0 11px;
   }
   .category-tabs button {
-    min-height: 30px;
+    min-height: 44px;
   }
   .piece-catalog {
     display: flex;
