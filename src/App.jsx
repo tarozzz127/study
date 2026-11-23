@@ -81,7 +81,10 @@ function EntryForm({ entry, busy, error, onSave, onClose }) {
       </div>
       <p className="eyebrow">A PIECE OF YOUR JOURNEY</p>
       <h2>{entry.id ? "思い出を、書きなおす。" : "どんな場所に行った？"}</h2>
-      <p className="muted">{prefectureFor(entry.prefecture)?.name || "前の箱庭の思い出"} · その日のことを、小さなかたちに。</p>
+      <p className="muted">
+        {prefectureFor(entry.prefecture)?.name || "前の箱庭の思い出"} ·
+        その日のことを、小さなかたちに。
+      </p>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -182,8 +185,10 @@ export default function App() {
   const natureCount = places.filter(
     (p) => pieceFor(p.piece).category === "nature",
   ).length;
-  const visitedCount = new Set(places.filter(p => p.prefecture).map(p => p.prefecture)).size;
-  const unassignedCount = places.filter(p => !p.prefecture).length;
+  const visitedCount = new Set(
+    places.filter((p) => p.prefecture).map((p) => p.prefecture),
+  ).size;
+  const unassignedCount = places.filter((p) => !p.prefecture).length;
   function close() {
     if (!lock.current) {
       setDialog(null);
@@ -427,7 +432,11 @@ export default function App() {
                     <PieceArt type={entry.piece} />
                     <span>
                       <strong>{entry.title}</strong>
-                      <small>{prefectureFor(entry.prefecture)?.name || "県を選んで地図へ"} · {entry.date.replaceAll("-", ".")}</small>
+                      <small>
+                        {prefectureFor(entry.prefecture)?.name ||
+                          "県を選んで地図へ"}{" "}
+                        · {entry.date.replaceAll("-", ".")}
+                      </small>
                     </span>
                     <ChevronRight size={15} />
                   </button>
@@ -477,7 +486,10 @@ export default function App() {
             <div className="world-toolbar">
               <div>
                 <span className="world-tag">わたしの日本地図</span>
-                <span className="world-season">{prefectureFor(prefectureId)?.name || "47の都道府県を、小さな箱庭に"}</span>
+                <span className="world-season">
+                  {prefectureFor(prefectureId)?.name ||
+                    "47の都道府県を、小さな箱庭に"}
+                </span>
               </div>
               <span className="placed-count">
                 <MapPin size={14} />
@@ -499,10 +511,15 @@ export default function App() {
               prefectureId={prefectureId}
               onPrefecture={setPrefectureId}
             />
-            {unassignedCount > 0 && <div className="unassigned-note">
-              前の箱庭の思い出が{unassignedCount}件あります。消していません。「旅のきろく」で開いて「移動」すると県に置けます。
-              <button onClick={() => setPanel("journal")}>旅のきろくを開く</button>
-            </div>}
+            {unassignedCount > 0 && (
+              <div className="unassigned-note">
+                前の箱庭の思い出が{unassignedCount}
+                件あります。消していません。「旅のきろく」で開いて「移動」すると県に置けます。
+                <button onClick={() => setPanel("journal")}>
+                  旅のきろくを開く
+                </button>
+              </div>
+            )}
             <div
               className={`placement-guide ${tool || moving ? "is-placing" : ""}`}
               aria-live="polite"
@@ -515,19 +532,19 @@ export default function App() {
                   {!prefectureId
                     ? "まず、行った都道府県を選ぼう。"
                     : moving
-                    ? `「${moving.title}」を、どこに移す？`
-                    : tool
-                      ? `${pieceFor(tool).name}を、どこに置く？`
-                      : "あなたの旅から、世界がはじまる。"}
+                      ? `「${moving.title}」を、どこに移す？`
+                      : tool
+                        ? `${pieceFor(tool).name}を、どこに置く？`
+                        : "あなたの旅から、世界がはじまる。"}
                 </strong>
                 <p>
                   {!prefectureId
                     ? "日本地図をタップ、または上の一覧から選んで拡大"
                     : moving
-                    ? "県の内側の空いている場所をタップして移動"
-                    : tool
-                      ? "県の内側をタップ → 場所の名前をつけて完成"
-                      : "パーツを選んで、県のかたちの中に置いてみよう"}
+                      ? "県の内側の空いている場所をタップして移動"
+                      : tool
+                        ? "県の内側をタップ → 場所の名前をつけて完成"
+                        : "パーツを選んで、県のかたちの中に置いてみよう"}
                 </p>
               </div>
               {tool || moving ? (
@@ -632,8 +649,8 @@ export default function App() {
           <h2 className="place-title">{selected.title}</h2>
           <p className="detail-date">
             <MapPin size={14} />
-            {prefectureFor(selected.prefecture)?.name || "県はまだ未設定"} · {" "}
-            {selected.date.replaceAll("-", ".")}
+            {prefectureFor(selected.prefecture)?.name ||
+              "県はまだ未設定"} · {selected.date.replaceAll("-", ".")}
           </p>
           <p className="detail-note">
             {selected.note || "言葉にしなくても、ちゃんと残る思い出。"}
@@ -664,9 +681,17 @@ export default function App() {
               <Trash2 size={18} />
             </button>
           </div>
-          {selected.prefecture && <button className="text-button" onClick={() => {
-            setPrefectureId(selected.prefecture); close();
-          }}><MapPin size={15} /> この県の地図を見る</button>}
+          {selected.prefecture && (
+            <button
+              className="text-button"
+              onClick={() => {
+                setPrefectureId(selected.prefecture);
+                close();
+              }}
+            >
+              <MapPin size={15} /> この県の地図を見る
+            </button>
+          )}
           {confirmDelete && (
             <div className="delete-confirm">
               <p>「{selected.title}」を箱庭から取り除きますか？</p>
@@ -847,7 +872,31 @@ export default function App() {
             </div>
           )}
           <p className="map-credit">
-            地図: <a href="https://mapsvg.com/maps/japan" target="_blank" rel="noreferrer">MapSVG</a> / <a href="https://github.com/VictorCazanave/svg-maps/tree/master/packages/japan" target="_blank" rel="noreferrer">svg-maps</a>（<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>・座標形式と表示を変更）。一部の小さな島を省略したイラスト地図です。
+            地図:{" "}
+            <a
+              href="https://mapsvg.com/maps/japan"
+              target="_blank"
+              rel="noreferrer"
+            >
+              MapSVG
+            </a>{" "}
+            /{" "}
+            <a
+              href="https://github.com/VictorCazanave/svg-maps/tree/master/packages/japan"
+              target="_blank"
+              rel="noreferrer"
+            >
+              svg-maps
+            </a>
+            （
+            <a
+              href="https://creativecommons.org/licenses/by/4.0/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              CC BY 4.0
+            </a>
+            ・座標形式と表示を変更）。一部の小さな島を省略したイラスト地図です。
           </p>
         </Modal>
       )}

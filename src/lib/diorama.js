@@ -64,7 +64,8 @@ export const today = () => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
-export const cellKey = (entry) => `${entry.prefecture || "unassigned"}:${entry.x},${entry.y}`;
+export const cellKey = (entry) =>
+  `${entry.prefecture || "unassigned"}:${entry.x},${entry.y}`;
 
 export function validatePlaces(entries) {
   if (!Array.isArray(entries) || entries.length > 4700)
@@ -81,8 +82,12 @@ export function validatePlaces(entries) {
       !PIECES.some((piece) => piece.id === entry.piece) ||
       (entry.prefecture !== undefined
         ? !validCell(entry)
-        : !Number.isInteger(entry.x) || entry.x < 0 || entry.x >= SIZE ||
-          !Number.isInteger(entry.y) || entry.y < 0 || entry.y >= SIZE) ||
+        : !Number.isInteger(entry.x) ||
+          entry.x < 0 ||
+          entry.x >= SIZE ||
+          !Number.isInteger(entry.y) ||
+          entry.y < 0 ||
+          entry.y >= SIZE) ||
       cells.has(cellKey(entry)) ||
       typeof entry.title !== "string" ||
       !entry.title.trim() ||
@@ -101,8 +106,18 @@ export function validatePlaces(entries) {
     ids.add(entry.id);
     cells.add(cellKey(entry));
     const { id, piece, x, y, title, note, date } = entry;
-    return { id, piece, x, y, title: title.trim(), note, date,
-      ...(entry.prefecture !== undefined ? { prefecture: entry.prefecture } : {}) };
+    return {
+      id,
+      piece,
+      x,
+      y,
+      title: title.trim(),
+      note,
+      date,
+      ...(entry.prefecture !== undefined
+        ? { prefecture: entry.prefecture }
+        : {}),
+    };
   });
 }
 export const makeDioramaBackup = (places) =>

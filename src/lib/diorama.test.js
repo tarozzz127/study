@@ -74,7 +74,11 @@ test("create, edit, move, replace and delete persist without touching the old ph
 });
 
 test("v1 gardens remain unassigned and can move to a prefecture without losing their memory", async () => {
-  const oldBackup = JSON.stringify({ app: "tabi-no-ato-diorama", version: 1, places: [place] });
+  const oldBackup = JSON.stringify({
+    app: "tabi-no-ato-diorama",
+    version: 1,
+    places: [place],
+  });
   assert.deepEqual(parseDioramaBackup(oldBackup), [place]);
   const kyoto = { ...place, ...cellsFor(prefectureFor("kyoto"))[20] };
   await writePlaces([place]);
@@ -93,13 +97,19 @@ test("v1 gardens remain unassigned and can move to a prefecture without losing t
 test("prefecture backups reject sea placement and invalid prefectures without overwriting storage", async () => {
   const pref = prefectureFor("kyoto");
   const land = cellsFor(pref)[20];
-  const entry = {...place, ...land};
-  const sea = Array.from({length: 576}, (_, i) => ({prefecture: pref.id, x: i % 24, y: Math.floor(i / 24)})).find(cell => !validCell(cell));
+  const entry = { ...place, ...land };
+  const sea = { prefecture: pref.id, x: 0, y: 0 };
+  assert.ok(!validCell(sea));
   await writePlaces([entry]);
-  for (const patch of [sea, {prefecture: "unknown"}, {prefecture: null}, {x: 1.5}]) {
-    await assert.rejects(() => writePlaces([{...entry, ...patch}]));
+  for (const patch of [
+    sea,
+    { prefecture: "unknown" },
+    { prefecture: null },
+    { x: 1.5 },
+  ]) {
+    await assert.rejects(() => writePlaces([{ ...entry, ...patch }]));
     assert.deepEqual(await readPlaces(), [entry]);
   }
-  await assert.rejects(() => writePlaces([entry, {...entry, id: "two"}]));
+  await assert.rejects(() => writePlaces([entry, { ...entry, id: "two" }]));
   await writePlaces([]);
 });
