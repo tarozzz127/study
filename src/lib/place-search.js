@@ -15,6 +15,20 @@ export function pieceForPlace(properties) {
   const name = properties.name || "";
   if (/camp_site|caravan_site/.test(kind) || /キャンプ|野営/.test(name))
     return "camp";
+  if (/waterfall/.test(kind) || /滝$/.test(name)) return "waterfall";
+  if (/castle/.test(kind) || /城$|城跡/.test(name)) return "castle";
+  if (
+    /hotel|guest_house|ryokan|motel|hostel/.test(kind) ||
+    /ホテル|旅館/.test(name)
+  )
+    return "hotel";
+  if (/bridge/.test(kind) || /大橋$|橋$/.test(name)) return "bridge";
+  if (/railway station/.test(kind) || /駅$/.test(name)) return "station";
+  if (
+    /flowerbed/.test(kind) ||
+    /花畑|花園|フラワー|ラベンダー|ひまわり/.test(name)
+  )
+    return "flowers";
   if (/peak|volcano|mountain/.test(kind) || /(?:山|岳|富士)$/.test(name))
     return "mountain";
   if (
@@ -64,9 +78,8 @@ export function parseCandidates(data) {
         return [];
       // Don't mistake similarly named bus stops or traffic signals for landmarks.
       if (
-        ["highway", "railway", "public_transport", "boundary"].includes(
-          p.osm_key,
-        ) ||
+        ["highway", "public_transport", "boundary"].includes(p.osm_key) ||
+        (p.osm_key === "railway" && p.osm_value !== "station") ||
         ["bicycle_rental", "parking", "parking_entrance"].includes(p.osm_value)
       )
         return [];

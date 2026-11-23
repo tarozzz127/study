@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Minus, Plus, Scan } from "lucide-react";
 import { PieceShape } from "./PieceArt.jsx";
 import { pieceFor } from "./lib/diorama.js";
@@ -24,6 +24,19 @@ function PrefectureCanvas({
   whole,
 }) {
   const svg = useRef(null);
+  const [unitsPerPixel, setUnitsPerPixel] = useState(1);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const matrix = svg.current?.getScreenCTM();
+      if (!matrix) return;
+      const scale = Math.hypot(matrix.a, matrix.b);
+      if (scale > 0) setUnitsPerPixel(1 / scale);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(svg.current);
+    return () => observer.disconnect();
+  }, [prefecture, whole]);
   const [cursor, setCursor] = useState(null);
   const cells = useMemo(
     () => (prefecture ? cellsFor(prefecture) : []),
@@ -34,7 +47,8 @@ function PrefectureCanvas({
       ? prefecture.main
       : prefecture;
   const span = bounds ? Math.max(bounds.width, bounds.height) : 510;
-  const pad = span * 0.18;
+  // Leave room for the largest (300%) artwork, including towers on the edge.
+  const pad = span * 0.34;
   const box = prefecture
     ? [
         bounds.minX - pad,
@@ -203,12 +217,15 @@ function PrefectureCanvas({
           .sort((a, b) => a.y - b.y || a.x - b.x)
           .map((place) => {
             const [x, y] = cellPoint(prefecture, place);
+            const scale = (span / 1000) * (place.size ?? 1);
+            // Use a filled rectangle, not a non-scaling stroke: WebKit can
+            // leave holes in the stroke's hit area at very small scales.
+            const hitWidth = Math.max(104 * scale, 44 * unitsPerPixel);
+            const hitHeight = Math.max(128 * scale, 44 * unitsPerPixel);
             return (
               <g
                 key={place.id}
-                transform={
-                  "translate(" + x + " " + y + ") scale(" + span / 1000 + ")"
-                }
+                transform={`translate(${x} ${y})`}
                 className={
                   "map-piece " + (moving?.id === place.id ? "moving" : "")
                 }
@@ -228,8 +245,16 @@ function PrefectureCanvas({
                 <title>
                   {place.title} · {place.date}
                 </title>
-                <circle cy="-22" r="38" fill="transparent" />
-                <PieceShape type={place.piece} />
+                <rect
+                  x={-hitWidth / 2}
+                  y={-39 * scale - hitHeight / 2}
+                  width={hitWidth}
+                  height={hitHeight}
+                  fill="transparent"
+                />
+                <g transform={`scale(${scale})`}>
+                  <PieceShape type={place.piece} variant={place.variant} />
+                </g>
               </g>
             );
           })}

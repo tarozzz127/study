@@ -7,6 +7,8 @@ import {
   readPlaces,
   validatePlaces,
   writePlaces,
+  PIECES,
+  looksFor,
 } from "./diorama.js";
 import { getMemories, saveMemory } from "./storage.js";
 import { prefectureFor, cellsFor, validCell } from "./prefectures.js";
@@ -87,7 +89,7 @@ test("v1 gardens remain unassigned and can move to a prefecture without losing t
   const tokyo = { ...kyoto, ...cellsFor(prefectureFor("tokyo"))[0] };
   await writePlaces([tokyo]);
   assert.deepEqual(await readPlaces(), [tokyo]);
-  assert.equal(JSON.parse(makeDioramaBackup([tokyo])).version, 3);
+  assert.equal(JSON.parse(makeDioramaBackup([tokyo])).version, 4);
   assert.deepEqual(parseDioramaBackup(makeDioramaBackup([tokyo])), [tokyo]);
   await writePlaces([place]);
   assert.deepEqual(await readPlaces(), [place]); // Undo can restore an unassigned garden.
@@ -111,5 +113,57 @@ test("prefecture backups reject sea placement and invalid prefectures without ov
     assert.deepEqual(await readPlaces(), [entry]);
   }
   await assert.rejects(() => writePlaces([entry, { ...entry, id: "two" }]));
+  await writePlaces([]);
+});
+
+test("every design and size survives storage and backup while old versions keep their defaults", async () => {
+  for (const piece of PIECES) {
+    for (const [variant] of looksFor(piece.id).entries()) {
+      const entry = {
+        ...place,
+        piece: piece.id,
+        variant,
+        size: variant === 0 ? 0.25 : variant === 1 ? 1.37 : 3,
+      };
+      await writePlaces([entry]);
+      assert.deepEqual(await readPlaces(), [entry]);
+      assert.deepEqual(parseDioramaBackup(makeDioramaBackup([entry])), [entry]);
+      const moved = { ...entry, x: 8, y: 7 };
+      await writePlaces([moved]);
+      assert.deepEqual(await readPlaces(), [moved]);
+      await writePlaces([entry]); // Undo restores size/design with the position.
+      assert.deepEqual(await readPlaces(), [entry]);
+    }
+  }
+  for (const version of [1, 2, 3]) {
+    assert.deepEqual(
+      parseDioramaBackup(
+        JSON.stringify({
+          app: "tabi-no-ato-diorama",
+          version,
+          places: [place],
+        }),
+      ),
+      [place],
+    );
+  }
+  await writePlaces([place]);
+  for (const patch of [
+    { size: 0 },
+    { size: 0.24 },
+    { size: 3.01 },
+    { size: NaN },
+    { size: Infinity },
+    { size: "2" },
+    { size: null },
+    { variant: -1 },
+    { variant: 3 },
+    { variant: 0.5 },
+    { variant: "1" },
+    { variant: null },
+  ]) {
+    await assert.rejects(() => writePlaces([{ ...place, ...patch }]));
+    assert.deepEqual(await readPlaces(), [place]);
+  }
   await writePlaces([]);
 });
