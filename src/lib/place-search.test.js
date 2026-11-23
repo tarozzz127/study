@@ -170,4 +170,20 @@ test("explicit search caches repeats, validates errors and does not save empty o
     /検索できません/,
   );
   await assert.rejects(searchPlaces("あ", { fetcher }), /2文字/);
+  await assert.rejects(
+    searchPlaces("通信エラーの場所", {
+      fetcher: async () => {
+        throw new TypeError("Load failed");
+      },
+      now: () => 16000,
+    }),
+    /通信を確認.*もう一度.*手動/,
+  );
+  assert.deepEqual(
+    await searchPlaces("通信エラーの場所", {
+      fetcher: async () => ({ ok: true, json: async () => response() }),
+      now: () => 19000,
+    }),
+    [tower()],
+  );
 });

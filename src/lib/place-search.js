@@ -150,16 +150,22 @@ export async function searchPlaces(
     bbox: "122,20,154,46",
     limit: "12",
   });
-  const response = await fetcher(`${SEARCH_ENDPOINT}?${params}`, {
-    signal,
-    credentials: "omit",
-    referrerPolicy: "origin",
-  });
-  if (!response.ok)
+  let data;
+  try {
+    const response = await fetcher(`${SEARCH_ENDPOINT}?${params}`, {
+      signal,
+      credentials: "omit",
+      referrerPolicy: "origin",
+    });
+    if (!response.ok) throw new Error("Search service unavailable");
+    data = await response.json();
+  } catch (error) {
+    if (error.name === "AbortError") throw error;
     throw new Error(
-      "いまは場所を検索できません。少し待つか、県を選んで手動で置いてください。",
+      "いまは場所を検索できません。通信を確認して、もう一度お試しください。県を選んで手動でも置けます。",
     );
-  const candidates = parseCandidates(await response.json());
+  }
+  const candidates = parseCandidates(data);
   if (cache.size >= 40) cache.delete(cache.keys().next().value);
   cache.set(key, candidates);
   return candidates;
