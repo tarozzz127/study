@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import PieceArt from "./PieceArt.jsx";
 import DioramaMap from "./DioramaMap.jsx";
+import PlaceSearch from "./PlaceSearch.jsx";
+import { placementForCandidate } from "./lib/place-search.js";
 import {
   PIECES,
   cellKey,
@@ -92,6 +94,21 @@ function EntryForm({ entry, busy, error, onSave, onClose }) {
         }}
       >
         <label>
+          パーツ
+          <select
+            value={draft.piece}
+            onChange={(event) =>
+              setDraft({ ...draft, piece: event.target.value })
+            }
+          >
+            {PIECES.map((piece) => (
+              <option key={piece.id} value={piece.id}>
+                {piece.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
           場所の名前 <span className="required">必須</span>
           <input
             autoFocus
@@ -148,6 +165,7 @@ function download(text, name) {
 }
 export default function App() {
   const [prefectureId, setPrefectureId] = useState(null);
+  const [focusPlace, setFocusPlace] = useState(null);
   const [places, setPlaces] = useState([]),
     [ready, setReady] = useState(false),
     [fatal, setFatal] = useState(false),
@@ -235,7 +253,9 @@ export default function App() {
       }
       if (
         await persist(
-          places.map((p) => (p.id === moving.id ? { ...p, ...cell } : p)),
+          places.map((p) =>
+            p.id === moving.id ? { ...p, ...cell, location: undefined } : p,
+          ),
           "場所を移しました",
         )
       )
@@ -273,6 +293,48 @@ export default function App() {
     ) {
       setDialog(null);
       setSelected(null);
+    }
+  }
+  async function addSearchPlace(candidate) {
+    if (lock.current || !ready || fatal || dialog) return false;
+    const existing = places.find(
+      (place) => place.location?.sourceId === candidate.id,
+    );
+    if (existing) {
+      setTool(null);
+      setMoving(null);
+      setPrefectureId(existing.prefecture);
+      setFocusPlace(existing);
+      setSelected(existing);
+      setConfirmDelete(false);
+      setDialog("detail");
+      setNotice("この場所はすでに地図にあります");
+      return true;
+    }
+    try {
+      const entry = {
+        ...placementForCandidate(candidate, places),
+        id: crypto.randomUUID(),
+        piece: candidate.piece,
+        title: candidate.title,
+        note: "",
+        date: today(),
+      };
+      if (
+        !(await persist(
+          [...places, entry],
+          `${entry.title}を地図に置きました。日付やパーツはタップして変更できます`,
+        ))
+      )
+        return false;
+      setTool(null);
+      setMoving(null);
+      setPrefectureId(entry.prefecture);
+      setFocusPlace(entry);
+      return true;
+    } catch (reason) {
+      setError(reason.message);
+      return false;
     }
   }
   async function loadFile(event) {
@@ -501,15 +563,25 @@ export default function App() {
                 保存データを開けませんでした。ブラウザの設定を確認して再読み込みしてください。データは上書きしません。
               </div>
             )}
+            <PlaceSearch
+              disabled={!ready || fatal || busy || !!dialog}
+              onChoose={addSearchPlace}
+            />
             <DioramaMap
-              key={prefectureId || "japan"}
+              key={(prefectureId || "japan") + (focusPlace?.id || "")}
               places={places}
               tool={tool}
               moving={moving}
               onCell={onCell}
               disabled={!ready || fatal || busy}
               prefectureId={prefectureId}
-              onPrefecture={setPrefectureId}
+              onPrefecture={(id) => {
+                setFocusPlace(null);
+                setPrefectureId(id);
+              }}
+              focusPlace={
+                focusPlace?.prefecture === prefectureId ? focusPlace : null
+              }
             />
             {unassignedCount > 0 && (
               <div className="unassigned-note">
@@ -544,7 +616,7 @@ export default function App() {
                       ? "県の内側の空いている場所をタップして移動"
                       : tool
                         ? "県の内側をタップ → 場所の名前をつけて完成"
-                        : "パーツを選んで、県のかたちの中に置いてみよう"}
+                        : "場所を検索して自動配置。パーツを選んで手動でも置けます"}
                 </p>
               </div>
               {tool || moving ? (
@@ -652,6 +724,12 @@ export default function App() {
             {prefectureFor(selected.prefecture)?.name ||
               "県はまだ未設定"} · {selected.date.replaceAll("-", ".")}
           </p>
+          {selected.location && (
+            <p className="muted">
+              検索した実際の位置に配置済み ·
+              日付やパーツは「編集」で変えられます
+            </p>
+          )}
           <p className="detail-note">
             {selected.note || "言葉にしなくても、ちゃんと残る思い出。"}
           </p>
@@ -686,6 +764,7 @@ export default function App() {
               className="text-button"
               onClick={() => {
                 setPrefectureId(selected.prefecture);
+                setFocusPlace(selected);
                 close();
               }}
             >
@@ -760,6 +839,9 @@ export default function App() {
               </div>
             </li>
           </ol>
+          <p className="help-footnote">
+            場所の名前で検索して候補を選ぶと、その実際の位置にパーツを自動配置します。日付は今日で保存され、「編集」で変更できます。検索で選ばれたパーツも変更できます。
+          </p>
           <p className="help-footnote">
             置いたパーツをタップすると、編集・移動・削除ができます。「移動」中に県を選び直すと、別の県へ移せます。拡大後は指で地図をスクロールできます。キーボードでは矢印キーとEnterが使えます。
           </p>
@@ -872,7 +954,19 @@ export default function App() {
             </div>
           )}
           <p className="map-credit">
-            地図:{" "}
+            現在の地図:{" "}
+            <a
+              href="https://www.naturalearthdata.com/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Natural Earth
+            </a>
+            （Public domain）。検索: Photon / © OpenStreetMap
+            contributors。地図は簡略化しているため、小さな島や海岸線は正確に描けない場合があります。以前手動で置いた記録は元の座標を残して表示します。
+          </p>
+          <p className="map-credit">
+            以前の地図データ（互換用）:{" "}
             <a
               href="https://mapsvg.com/maps/japan"
               target="_blank"
