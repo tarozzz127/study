@@ -33,6 +33,7 @@ import {
   writePlaces,
 } from "./lib/diorama.js";
 import { getMemories, makeBackup } from "./lib/storage.js";
+import { prefectureFor } from "./lib/prefectures.js";
 
 function Modal({ children, title, onClose }) {
   const ref = useRef(null);
@@ -80,7 +81,7 @@ function EntryForm({ entry, busy, error, onSave, onClose }) {
       </div>
       <p className="eyebrow">A PIECE OF YOUR JOURNEY</p>
       <h2>{entry.id ? "思い出を、書きなおす。" : "どんな場所に行った？"}</h2>
-      <p className="muted">その日のことを、小さなかたちに。</p>
+      <p className="muted">{prefectureFor(entry.prefecture)?.name || "前の箱庭の思い出"} · その日のことを、小さなかたちに。</p>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -143,6 +144,7 @@ function download(text, name) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 export default function App() {
+  const [prefectureId, setPrefectureId] = useState(null);
   const [places, setPlaces] = useState([]),
     [ready, setReady] = useState(false),
     [fatal, setFatal] = useState(false),
@@ -180,6 +182,8 @@ export default function App() {
   const natureCount = places.filter(
     (p) => pieceFor(p.piece).category === "nature",
   ).length;
+  const visitedCount = new Set(places.filter(p => p.prefecture).map(p => p.prefecture)).size;
+  const unassignedCount = places.filter(p => !p.prefecture).length;
   function close() {
     if (!lock.current) {
       setDialog(null);
@@ -221,7 +225,7 @@ export default function App() {
     const entry = places.find((p) => cellKey(p) === cellKey(cell));
     if (moving) {
       if (entry && entry.id !== moving.id) {
-        setNotice("そこには思い出があります。空いているマスを選んでね");
+        setNotice("そこには思い出があります。県の内側の別の場所を選んでね");
         return;
       }
       if (
@@ -248,7 +252,7 @@ export default function App() {
       setDialog("form");
       setError("");
     } else {
-      setNotice("パーツから、置きたいものを選んでね");
+      setNotice("パーツから、置きたい建物や自然を選んでね");
       setPanel("build");
     }
   }
@@ -272,8 +276,8 @@ export default function App() {
     if (!file) return;
     setError("");
     try {
-      if (file.size > 1000000)
-        throw new Error("1MBまでの箱庭バックアップを選んでください。");
+      if (file.size > 10000000)
+        throw new Error("10MBまでの箱庭バックアップを選んでください。");
       setPendingImport(parseDioramaBackup(await file.text()));
     } catch (e) {
       setError(
@@ -423,7 +427,7 @@ export default function App() {
                     <PieceArt type={entry.piece} />
                     <span>
                       <strong>{entry.title}</strong>
-                      <small>{entry.date.replaceAll("-", ".")}</small>
+                      <small>{prefectureFor(entry.prefecture)?.name || "県を選んで地図へ"} · {entry.date.replaceAll("-", ".")}</small>
                     </span>
                     <ChevronRight size={15} />
                   </button>
@@ -457,7 +461,7 @@ export default function App() {
             <div>
               <p className="eyebrow">MY TRAVEL DIORAMA</p>
               <h1>旅を、ひとつずつ。</h1>
-              <p>まっしろな世界に、あなただけの足あとを。</p>
+              <p>日本のかたちに、あなただけの足あとを。</p>
             </div>
             <div className="level-badge">
               <span>
@@ -472,12 +476,12 @@ export default function App() {
           <div className="world-card">
             <div className="world-toolbar">
               <div>
-                <span className="world-tag">わたしの箱庭</span>
-                <span className="world-season">はじまりの島</span>
+                <span className="world-tag">わたしの日本地図</span>
+                <span className="world-season">{prefectureFor(prefectureId)?.name || "47の都道府県を、小さな箱庭に"}</span>
               </div>
               <span className="placed-count">
                 <MapPin size={14} />
-                {places.length} / 100
+                {visitedCount} / 47 都道府県
               </span>
             </div>
             {fatal && (
@@ -486,33 +490,44 @@ export default function App() {
               </div>
             )}
             <DioramaMap
+              key={prefectureId || "japan"}
               places={places}
               tool={tool}
               moving={moving}
               onCell={onCell}
               disabled={!ready || fatal || busy}
+              prefectureId={prefectureId}
+              onPrefecture={setPrefectureId}
             />
+            {unassignedCount > 0 && <div className="unassigned-note">
+              前の箱庭の思い出が{unassignedCount}件あります。消していません。「旅のきろく」で開いて「移動」すると県に置けます。
+              <button onClick={() => setPanel("journal")}>旅のきろくを開く</button>
+            </div>}
             <div
               className={`placement-guide ${tool || moving ? "is-placing" : ""}`}
               aria-live="polite"
             >
               <span className="guide-number">
-                {tool || moving ? "02" : "01"}
+                {!prefectureId ? "01" : tool || moving ? "03" : "02"}
               </span>
               <div>
                 <strong>
-                  {moving
+                  {!prefectureId
+                    ? "まず、行った都道府県を選ぼう。"
+                    : moving
                     ? `「${moving.title}」を、どこに移す？`
                     : tool
                       ? `${pieceFor(tool).name}を、どこに置く？`
                       : "あなたの旅から、世界がはじまる。"}
                 </strong>
                 <p>
-                  {moving
-                    ? "空いているマスをタップして移動"
+                  {!prefectureId
+                    ? "日本地図をタップ、または上の一覧から選んで拡大"
+                    : moving
+                    ? "県の内側の空いている場所をタップして移動"
                     : tool
-                      ? "白いマスをタップ → 場所の名前をつけて完成"
-                      : "パーツを選んで、白いマスに置いてみよう"}
+                      ? "県の内側をタップ → 場所の名前をつけて完成"
+                      : "パーツを選んで、県のかたちの中に置いてみよう"}
                 </p>
               </div>
               {tool || moving ? (
@@ -617,6 +632,7 @@ export default function App() {
           <h2 className="place-title">{selected.title}</h2>
           <p className="detail-date">
             <MapPin size={14} />
+            {prefectureFor(selected.prefecture)?.name || "県はまだ未設定"} · {" "}
             {selected.date.replaceAll("-", ".")}
           </p>
           <p className="detail-note">
@@ -632,6 +648,8 @@ export default function App() {
               onClick={() => {
                 setMoving(selected);
                 setTool(null);
+                setPrefectureId(selected.prefecture || null);
+                setPanel("build");
                 close();
               }}
             >
@@ -646,6 +664,9 @@ export default function App() {
               <Trash2 size={18} />
             </button>
           </div>
+          {selected.prefecture && <button className="text-button" onClick={() => {
+            setPrefectureId(selected.prefecture); close();
+          }}><MapPin size={15} /> この県の地図を見る</button>}
           {confirmDelete && (
             <div className="delete-confirm">
               <p>「{selected.title}」を箱庭から取り除きますか？</p>
@@ -687,23 +708,23 @@ export default function App() {
           <p className="eyebrow">WELCOME TO YOUR LITTLE WORLD</p>
           <h2>旅の思い出で、街をつくろう。</h2>
           <p className="muted">
-            ここは、あなただけの小さな箱庭。
+            ここは、日本地図からつくる小さな箱庭。
             <br />
-            正しい場所も、決まった並べ方もありません。
+            行った都道府県を、思い出のかたちで育てよう。
           </p>
           <ol className="help-steps">
             <li>
               <span>01</span>
               <div>
-                <strong>行った場所に似たパーツを選ぶ</strong>
-                <p>カフェ、山、神社。好きなかたちで大丈夫。</p>
+                <strong>日本地図で、行った都道府県を選ぶ</strong>
+                <p>県をタップすると拡大。一覧からも選べます。</p>
               </div>
             </li>
             <li>
               <span>02</span>
               <div>
-                <strong>白いマスをタップして置く</strong>
-                <p>名前と日付をつけて、思い出のできあがり。</p>
+                <strong>建物や自然を、県のかたちの中に置く</strong>
+                <p>パーツを選び、県の内側をタップ。名前と日付をつけよう。</p>
               </div>
             </li>
             <li>
@@ -715,7 +736,7 @@ export default function App() {
             </li>
           </ol>
           <p className="help-footnote">
-            置いたパーツをタップすると、編集・移動・削除ができます。拡大後は指で画面をスクロールできます。キーボードでは矢印キーとEnterが使えます。
+            置いたパーツをタップすると、編集・移動・削除ができます。「移動」中に県を選び直すと、別の県へ移せます。拡大後は指で地図をスクロールできます。キーボードでは矢印キーとEnterが使えます。
           </p>
           <button className="primary full" onClick={close}>
             さあ、つくろう
@@ -825,6 +846,9 @@ export default function App() {
               </button>
             </div>
           )}
+          <p className="map-credit">
+            地図: <a href="https://mapsvg.com/maps/japan" target="_blank" rel="noreferrer">MapSVG</a> / <a href="https://github.com/VictorCazanave/svg-maps/tree/master/packages/japan" target="_blank" rel="noreferrer">svg-maps</a>（<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>・座標形式と表示を変更）。一部の小さな島を省略したイラスト地図です。
+          </p>
         </Modal>
       )}
     </div>

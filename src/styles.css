@@ -407,6 +407,27 @@ svg {
   background: radial-gradient(ellipse at 50% 75%, #f6f8f0 0%, #fff 67%);
   padding-top: 18px;
 }
+.japan-stage { padding-top: 8px; }
+.map-navigation { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 20px; }
+.map-back { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; color: #6d8264; font-size: 12px; white-space: nowrap; }
+.map-back:disabled { opacity: .4; }
+.prefecture-picker { min-width: 0; }
+.prefecture-picker select { max-width: 100%; min-height: 44px; padding: 0 30px 0 12px; border: 1px solid #dce4d6; border-radius: 8px; background: white; color: #61745c; font: inherit; font-size: 12px; }
+.map-caption { padding: 14px 20px 0; display: flex; flex-direction: column; gap: 6px; color: #829077; }
+.map-caption strong { font-family: "Noto Serif JP", serif; font-size: 16px; color: #54674d; font-weight: 500; }
+.map-caption span { font-size: 10px; line-height: 1.7; }
+.japan-scroll { min-height: 0 !important; max-height: 470px; margin: 8px 0 12px; }
+.japan-diorama { width: 100%; aspect-ratio: 900 / 620; }
+.prefecture-shape { fill: #fff; stroke: #cbd6c3; stroke-width: 1.2; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill .15s; touch-action: manipulation; }
+.prefecture-shape.visited { fill: #dce9ce; stroke: #9eb88c; }
+.prefecture-shape:hover, .prefecture-shape:focus { fill: #eef3e6; stroke: #799568; outline: none; }
+.prefecture-shape.is-detail { fill: #fdfefb; stroke: #a9bd9b; stroke-width: 1.5; }
+.placement-dot { fill: #c9d8bc; pointer-events: none; }
+.cursor-dot { fill: #e0b48a; fill-opacity: .6; pointer-events: none; }
+.unassigned-note { padding: 12px 20px; background: #fbf5e8; font-size: 12px; line-height: 1.8; color: #89744f; }
+.unassigned-note button { margin-left: 8px; text-decoration: underline; min-height: 44px; }
+.map-credit { font-size: 10px; line-height: 1.8; color: #8b9683; margin-top: 22px; }
+.map-credit a { text-decoration: underline; }
 .map-coordinate {
   display: flex;
   align-items: center;

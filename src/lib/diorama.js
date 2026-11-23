@@ -1,4 +1,5 @@
-export const SIZE = 10;
+import { validCell } from "./prefectures.js";
+export const SIZE = 10; // Original square-garden coordinates remain readable.
 export const PIECES = [
   {
     id: "house",
@@ -63,10 +64,10 @@ export const today = () => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
-export const cellKey = (entry) => `${entry.x},${entry.y}`;
+export const cellKey = (entry) => `${entry.prefecture || "unassigned"}:${entry.x},${entry.y}`;
 
 export function validatePlaces(entries) {
-  if (!Array.isArray(entries) || entries.length > SIZE * SIZE)
+  if (!Array.isArray(entries) || entries.length > 4700)
     throw new Error("箱庭のデータを読み込めませんでした。");
   const ids = new Set(),
     cells = new Set();
@@ -78,12 +79,10 @@ export function validatePlaces(entries) {
       entry.id.length > 100 ||
       ids.has(entry.id) ||
       !PIECES.some((piece) => piece.id === entry.piece) ||
-      !Number.isInteger(entry.x) ||
-      entry.x < 0 ||
-      entry.x >= SIZE ||
-      !Number.isInteger(entry.y) ||
-      entry.y < 0 ||
-      entry.y >= SIZE ||
+      (entry.prefecture !== undefined
+        ? !validCell(entry)
+        : !Number.isInteger(entry.x) || entry.x < 0 || entry.x >= SIZE ||
+          !Number.isInteger(entry.y) || entry.y < 0 || entry.y >= SIZE) ||
       cells.has(cellKey(entry)) ||
       typeof entry.title !== "string" ||
       !entry.title.trim() ||
@@ -102,14 +101,15 @@ export function validatePlaces(entries) {
     ids.add(entry.id);
     cells.add(cellKey(entry));
     const { id, piece, x, y, title, note, date } = entry;
-    return { id, piece, x, y, title: title.trim(), note, date };
+    return { id, piece, x, y, title: title.trim(), note, date,
+      ...(entry.prefecture !== undefined ? { prefecture: entry.prefecture } : {}) };
   });
 }
 export const makeDioramaBackup = (places) =>
-  JSON.stringify({ app: "tabi-no-ato-diorama", version: 1, places }, null, 2);
+  JSON.stringify({ app: "tabi-no-ato-diorama", version: 2, places }, null, 2);
 export function parseDioramaBackup(text) {
   const backup = JSON.parse(text);
-  if (backup?.app !== "tabi-no-ato-diorama" || backup.version !== 1)
+  if (backup?.app !== "tabi-no-ato-diorama" || ![1, 2].includes(backup.version))
     throw new Error(
       "箱庭のバックアップファイルを選んでください。前の旅ログとは形式が異なります。",
     );

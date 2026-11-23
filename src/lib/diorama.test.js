@@ -9,6 +9,7 @@ import {
   writePlaces,
 } from "./diorama.js";
 import { getMemories, saveMemory } from "./storage.js";
+import { prefectureFor, cellsFor, validCell } from "./prefectures.js";
 const place = {
   id: "one",
   piece: "cafe",
@@ -70,4 +71,35 @@ test("create, edit, move, replace and delete persist without touching the old ph
   await writePlaces([]);
   assert.deepEqual(await readPlaces(), []);
   assert.deepEqual(await getMemories(), [legacy]);
+});
+
+test("v1 gardens remain unassigned and can move to a prefecture without losing their memory", async () => {
+  const oldBackup = JSON.stringify({ app: "tabi-no-ato-diorama", version: 1, places: [place] });
+  assert.deepEqual(parseDioramaBackup(oldBackup), [place]);
+  const kyoto = { ...place, ...cellsFor(prefectureFor("kyoto"))[20] };
+  await writePlaces([place]);
+  await writePlaces([kyoto]);
+  assert.deepEqual(await readPlaces(), [kyoto]);
+  const tokyo = { ...kyoto, ...cellsFor(prefectureFor("tokyo"))[0] };
+  await writePlaces([tokyo]);
+  assert.deepEqual(await readPlaces(), [tokyo]);
+  assert.equal(JSON.parse(makeDioramaBackup([tokyo])).version, 2);
+  assert.deepEqual(parseDioramaBackup(makeDioramaBackup([tokyo])), [tokyo]);
+  await writePlaces([place]);
+  assert.deepEqual(await readPlaces(), [place]); // Undo can restore an unassigned garden.
+  await writePlaces([]);
+});
+
+test("prefecture backups reject sea placement and invalid prefectures without overwriting storage", async () => {
+  const pref = prefectureFor("kyoto");
+  const land = cellsFor(pref)[20];
+  const entry = {...place, ...land};
+  const sea = Array.from({length: 576}, (_, i) => ({prefecture: pref.id, x: i % 24, y: Math.floor(i / 24)})).find(cell => !validCell(cell));
+  await writePlaces([entry]);
+  for (const patch of [sea, {prefecture: "unknown"}, {prefecture: null}, {x: 1.5}]) {
+    await assert.rejects(() => writePlaces([{...entry, ...patch}]));
+    assert.deepEqual(await readPlaces(), [entry]);
+  }
+  await assert.rejects(() => writePlaces([entry, {...entry, id: "two"}]));
+  await writePlaces([]);
 });
