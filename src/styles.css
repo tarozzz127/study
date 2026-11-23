@@ -2,16 +2,16 @@
 
 :root {
   font-family: "Noto Sans JP", sans-serif;
-  color: #354c42;
-  background: #f7f8f3;
+  color: #243d35;
+  background: #f2f5f0;
   font-synthesis: none;
   font-size: 14px;
   font-weight: 400;
-  --green: #476c59;
-  --ink: #354c42;
-  --muted: #7f8c80;
-  --line: #e7ebe2;
-  --cream: #f7f8f3;
+  --green: #245b46;
+  --ink: #243d35;
+  --muted: #53665b;
+  --line: #c8d5ca;
+  --cream: #f2f5f0;
 }
 * {
   box-sizing: border-box;
@@ -404,7 +404,7 @@ svg {
 }
 .map-stage {
   position: relative;
-  background: radial-gradient(ellipse at 50% 75%, #f6f8f0 0%, #fff 67%);
+  background: #e2edf3;
   padding-top: 18px;
 }
 .japan-stage {
@@ -471,27 +471,27 @@ svg {
 }
 .prefecture-shape {
   fill: #fff;
-  stroke: #cbd6c3;
-  stroke-width: 1.2;
+  stroke: #537663;
+  stroke-width: 1.35;
   vector-effect: non-scaling-stroke;
   cursor: pointer;
   transition: fill 0.15s;
   touch-action: manipulation;
 }
 .prefecture-shape.visited {
-  fill: #dce9ce;
-  stroke: #9eb88c;
+  fill: #a4d2a7;
+  stroke: #28583f;
 }
 .prefecture-shape:hover,
 .prefecture-shape:focus {
-  fill: #eef3e6;
-  stroke: #799568;
+  fill: #c3e2be;
+  stroke: #174d37;
   outline: none;
 }
 .prefecture-shape.is-detail {
-  fill: #fdfefb;
-  stroke: #a9bd9b;
-  stroke-width: 1.5;
+  fill: #fafff5;
+  stroke: #3c674b;
+  stroke-width: 1.8;
 }
 .placement-dot {
   fill: #c9d8bc;
@@ -1660,5 +1660,258 @@ textarea {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Clear ink, visible controls and a blue sea distinguish the white land. */
+.eyebrow,
+.muted,
+.save-state,
+.icon-button,
+.map-back,
+.map-caption,
+.map-caption strong,
+.map-credit,
+.islands-toggle,
+.sidebar-heading p:last-child,
+.catalog-note,
+.catalog-note p,
+.world-heading p:last-child,
+.world-season,
+.placed-count,
+.world-footer,
+.mode-tabs button,
+.category-tabs button,
+.dialog-art span,
+.detail-hero span,
+.detail-date,
+.detail-note {
+  color: var(--muted);
+}
+.primary {
+  background: var(--green);
+  border-color: var(--green);
+}
+.primary:hover {
+  background: #174a36;
+}
+.category-tabs button.selected {
+  color: #174a36;
+  border-color: #245b46;
+}
+.mode-tabs button.selected {
+  color: #174a36;
+  box-shadow: 0 0 0 1px #94ac98;
+}
+.piece-card {
+  border-color: #b9cbbb;
+}
+.piece-card.selected {
+  border: 2px solid #245b46;
+  background: #e5f3dd;
+}
+.piece-card > span {
+  color: #355840;
+}
+.piece-card .piece-check {
+  color: white;
+  background: #245b46;
+}
+.map-caption span,
+.map-bottom > span,
+.placement-guide p {
+  font-size: 12px;
+  color: #415f50;
+}
+.map-credit {
+  font-size: 11px;
+}
+.prefecture-picker select {
+  color: #243d35;
+  border-color: #7d9b87;
+  font-size: 14px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-color: #177b9c;
+}
+.modal label,
+.modal .muted,
+.detail-date {
+  font-size: 13px;
+}
+.modal select {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  min-height: 46px;
+  padding: 10px;
+  border: 1px solid #8fa795;
+  border-radius: 7px;
+  color: var(--ink);
+  background: white;
+  font: inherit;
+  font-size: 16px;
+}
+input,
+textarea {
+  border-color: #8fa795;
+  font-size: 16px;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #64756a;
+  font-size: 13px;
+}
+.place-search {
+  padding: 20px;
+  background: #f1f7ec;
+  border-bottom: 1px solid #a4bda6;
+}
+.place-search > label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #24513c;
+}
+.search-hint {
+  font-size: 12px;
+  color: #415f50;
+  margin-top: 5px;
+  line-height: 1.8;
+}
+.place-search form {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-top: 13px;
+  padding: 5px 5px 5px 12px;
+  background: white;
+  border: 1px solid #759680;
+  border-radius: 9px;
+}
+.place-search input {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  padding: 9px 0;
+  border: 0;
+  background: transparent;
+}
+.place-search .primary {
+  flex-shrink: 0;
+  min-height: 44px;
+  font-size: 14px;
+  padding: 9px 16px;
+}
+.search-credit {
+  font-size: 11px;
+  color: #53665b;
+  line-height: 1.8;
+  margin-top: 8px;
+}
+.search-credit a {
+  text-decoration: underline;
+}
+.search-results {
+  padding-top: 8px;
+}
+.search-results-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+}
+.search-results > p {
+  font-size: 13px;
+  line-height: 1.9;
+}
+.search-results ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.search-results li + li {
+  border-top: 1px solid #bdceba;
+}
+.search-results li > button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 84px;
+  padding: 10px;
+  border-radius: 7px;
+  text-align: left;
+}
+.search-results li > button:hover,
+.search-results li > button:focus-visible {
+  background: #dfedd9;
+}
+.search-results li > button > svg:first-child {
+  width: 45px;
+  height: 55px;
+}
+.search-results li > button > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.search-results strong,
+.search-results small,
+.search-results em {
+  display: block;
+}
+.search-results strong {
+  font-size: 14px;
+  color: #243d35;
+}
+.search-results small {
+  font-size: 12px;
+  color: #53665b;
+  line-height: 1.7;
+  margin-top: 3px;
+}
+.search-results em {
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  color: #245b46;
+  margin-top: 3px;
+}
+@media (max-width: 600px) {
+  .place-search {
+    padding: 15px 13px;
+  }
+  .place-search > label {
+    font-size: 15px;
+  }
+  .place-search form {
+    gap: 5px;
+    padding-left: 9px;
+  }
+  .place-search input::placeholder {
+    font-size: 11px;
+  }
+  .place-search .primary {
+    padding-inline: 12px;
+  }
+  .piece-card > span {
+    font-size: 11px;
+  }
+  .sidebar-heading p:last-child,
+  .catalog-note p {
+    font-size: 11px;
+  }
+  .map-caption span {
+    font-size: 11px;
+  }
+  .world-footer {
+    font-size: 10px;
   }
 }

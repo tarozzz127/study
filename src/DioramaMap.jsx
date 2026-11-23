@@ -9,6 +9,7 @@ import {
   cellPoint,
   cellsFor,
   validCell,
+  projectLocation,
 } from "./lib/prefectures.js";
 
 function PrefectureCanvas({
@@ -41,7 +42,7 @@ function PrefectureCanvas({
         bounds.width + pad * 2,
         bounds.height + pad * 2,
       ]
-    : [-18, -22, 474, 560];
+    : [-18, -20, 630, 620];
   const ghost = moving?.piece || tool;
   function activate(event) {
     if (!prefecture || disabled || !svg.current) return;
@@ -52,6 +53,7 @@ function PrefectureCanvas({
     point.y = event.clientY;
     const local = point.matrixTransform(matrix.inverse());
     const cell = {
+      grid: "geo",
       prefecture: prefecture.id,
       x: Math.floor(
         ((local.x - prefecture.minX) / prefecture.width) * PREFECTURE_SIZE,
@@ -243,9 +245,20 @@ export default function DioramaMap({
   disabled,
   prefectureId,
   onPrefecture,
+  focusPlace,
 }) {
   const [zoom, setZoom] = useState(1);
-  const [whole, setWhole] = useState(false);
+  const [whole, setWhole] = useState(() => {
+    const pref = prefectureFor(prefectureId);
+    if (!pref?.hasDistantIslands || !focusPlace?.location) return false;
+    const [x, y] = projectLocation(focusPlace.location);
+    return (
+      x < pref.main.minX ||
+      x > pref.main.minX + pref.main.width ||
+      y < pref.main.minY ||
+      y > pref.main.minY + pref.main.height
+    );
+  });
   const scroll = useRef(null);
   const prefecture = prefectureFor(prefectureId);
   const counts = useMemo(

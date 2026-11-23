@@ -87,7 +87,7 @@ test("v1 gardens remain unassigned and can move to a prefecture without losing t
   const tokyo = { ...kyoto, ...cellsFor(prefectureFor("tokyo"))[0] };
   await writePlaces([tokyo]);
   assert.deepEqual(await readPlaces(), [tokyo]);
-  assert.equal(JSON.parse(makeDioramaBackup([tokyo])).version, 2);
+  assert.equal(JSON.parse(makeDioramaBackup([tokyo])).version, 3);
   assert.deepEqual(parseDioramaBackup(makeDioramaBackup([tokyo])), [tokyo]);
   await writePlaces([place]);
   assert.deepEqual(await readPlaces(), [place]); // Undo can restore an unassigned garden.

@@ -1,4 +1,4 @@
-import { validCell } from "./prefectures.js";
+import { validCell, prefectureAt } from "./prefectures.js";
 export const SIZE = 10; // Original square-garden coordinates remain readable.
 export const PIECES = [
   {
@@ -65,7 +65,7 @@ export const today = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
 export const cellKey = (entry) =>
-  `${entry.prefecture || "unassigned"}:${entry.x},${entry.y}`;
+  `${entry.prefecture || "unassigned"}:${entry.grid || "legacy"}:${entry.x},${entry.y}`;
 
 export function validatePlaces(entries) {
   if (!Array.isArray(entries) || entries.length > 4700)
@@ -80,6 +80,19 @@ export function validatePlaces(entries) {
       entry.id.length > 100 ||
       ids.has(entry.id) ||
       !PIECES.some((piece) => piece.id === entry.piece) ||
+      (entry.grid !== undefined &&
+        (entry.grid !== "geo" || !entry.prefecture)) ||
+      (entry.location !== undefined &&
+        (entry.grid !== "geo" ||
+          !Number.isFinite(entry.location?.lat) ||
+          !Number.isFinite(entry.location?.lon) ||
+          typeof entry.location?.sourceId !== "string" ||
+          !entry.location.sourceId ||
+          entry.location.sourceId.length > 100 ||
+          typeof entry.location.prefectureName !== "string" ||
+          entry.location.prefectureName.length > 30 ||
+          prefectureAt(entry.location, entry.location.prefectureName || "")
+            ?.id !== entry.prefecture)) ||
       (entry.prefecture !== undefined
         ? !validCell(entry)
         : !Number.isInteger(entry.x) ||
@@ -114,6 +127,20 @@ export function validatePlaces(entries) {
       title: title.trim(),
       note,
       date,
+      ...(entry.grid ? { grid: entry.grid } : {}),
+      ...(entry.location
+        ? {
+            location: {
+              lat: entry.location.lat,
+              lon: entry.location.lon,
+              sourceId: entry.location.sourceId,
+              prefectureName: prefectureAt(
+                entry.location,
+                entry.location.prefectureName || "",
+              ).name,
+            },
+          }
+        : {}),
       ...(entry.prefecture !== undefined
         ? { prefecture: entry.prefecture }
         : {}),
@@ -121,10 +148,13 @@ export function validatePlaces(entries) {
   });
 }
 export const makeDioramaBackup = (places) =>
-  JSON.stringify({ app: "tabi-no-ato-diorama", version: 2, places }, null, 2);
+  JSON.stringify({ app: "tabi-no-ato-diorama", version: 3, places }, null, 2);
 export function parseDioramaBackup(text) {
   const backup = JSON.parse(text);
-  if (backup?.app !== "tabi-no-ato-diorama" || ![1, 2].includes(backup.version))
+  if (
+    backup?.app !== "tabi-no-ato-diorama" ||
+    ![1, 2, 3].includes(backup.version)
+  )
     throw new Error(
       "箱庭のバックアップファイルを選んでください。前の旅ログとは形式が異なります。",
     );
