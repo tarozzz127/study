@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Minus, Plus, Scan } from "lucide-react";
 import { PieceShape } from "./PieceArt.jsx";
-import { pieceFor } from "./lib/diorama.js";
+import { pieceFor, MIN_PIECE_SIZE, MAX_PIECE_SIZE } from "./lib/diorama.js";
+import usePinch from "./usePinch.js";
 import {
   PREFECTURES,
   PREFECTURE_SIZE,
@@ -22,6 +23,7 @@ function PrefectureCanvas({
   counts,
   onPrefecture,
   whole,
+  resizing,
 }) {
   const svg = useRef(null);
   const [unitsPerPixel, setUnitsPerPixel] = useState(1);
@@ -227,7 +229,9 @@ function PrefectureCanvas({
                 key={place.id}
                 transform={`translate(${x} ${y})`}
                 className={
-                  "map-piece " + (moving?.id === place.id ? "moving" : "")
+                  "map-piece " +
+                  (moving?.id === place.id ? "moving" : "") +
+                  (resizing?.id === place.id ? " resizing" : "")
                 }
                 role="button"
                 tabIndex={disabled ? undefined : 0}
@@ -246,6 +250,7 @@ function PrefectureCanvas({
                   {place.title} · {place.date}
                 </title>
                 <rect
+                  className="piece-hit-target"
                   x={-hitWidth / 2}
                   y={-39 * scale - hitHeight / 2}
                   width={hitWidth}
@@ -271,6 +276,10 @@ export default function DioramaMap({
   prefectureId,
   onPrefecture,
   focusPlace,
+  resizing,
+  onResizeChange,
+  onResizeCancel,
+  onResizeSave,
 }) {
   const [zoom, setZoom] = useState(1);
   const [whole, setWhole] = useState(() => {
@@ -285,6 +294,54 @@ export default function DioramaMap({
     );
   });
   const scroll = useRef(null);
+  const anchor = useRef(null);
+  const pendingScroll = useRef(null);
+  usePinch(scroll, {
+    value: resizing ? (resizing.size ?? 1) : zoom,
+    min: resizing ? MIN_PIECE_SIZE : 1,
+    max: resizing ? MAX_PIECE_SIZE : 3,
+    disabled,
+    onStart: ({ center }) => {
+      const element = scroll.current;
+      const box = element.getBoundingClientRect();
+      anchor.current = {
+        zoom,
+        x: element.scrollLeft + center.x - box.left,
+        y: element.scrollTop + center.y - box.top,
+      };
+    },
+    onChange: (next, { center }) => {
+      if (resizing) {
+        onResizeChange(Math.round(next * 100) / 100);
+        return;
+      }
+      const box = scroll.current.getBoundingClientRect();
+      const ratio = next / anchor.current.zoom;
+      pendingScroll.current = {
+        x: anchor.current.x * ratio - (center.x - box.left),
+        y: anchor.current.y * ratio - (center.y - box.top),
+      };
+      if (next === zoom) {
+        scroll.current.scrollTo(
+          pendingScroll.current.x,
+          pendingScroll.current.y,
+        );
+        pendingScroll.current = null;
+      } else setZoom(next);
+    },
+    onPan: ({ x, y }) => scroll.current.scrollBy(x, y),
+  });
+  useLayoutEffect(() => {
+    if (!pendingScroll.current) return;
+    const { x, y } = pendingScroll.current;
+    scroll.current.scrollTo(x, y);
+    pendingScroll.current = null;
+  }, [zoom]);
+  const displayedPlaces = resizing
+    ? places.map((place) =>
+        place.id === resizing.id ? { ...place, size: resizing.size } : place,
+      )
+    : places;
   useEffect(() => {
     if (!focusPlace) return;
     // Search results can be above a tall map, especially on landscape iPad.
@@ -324,7 +381,7 @@ export default function DioramaMap({
         <button
           className="map-back"
           onClick={() => select(null)}
-          disabled={!prefecture || disabled}
+          disabled={!prefecture || disabled || !!resizing}
         >
           <ArrowLeft size={15} /> 日本全体
         </button>
@@ -333,7 +390,7 @@ export default function DioramaMap({
           <select
             aria-label="都道府県を選ぶ"
             value={prefectureId || ""}
-            disabled={disabled}
+            disabled={disabled || !!resizing}
             onChange={(event) => select(event.target.value)}
           >
             <option value="">行った都道府県を選ぶ</option>
@@ -353,13 +410,14 @@ export default function DioramaMap({
             : "日本のかたちに、旅を残そう。"}
         </strong>
         <span>
-          {prefecture
-            ? "県の内側に、建物や自然を置いてみよう"
-            : "地図の県をタップで拡大。小さな県は上の一覧からも選べます"}
+          {resizing
+            ? "2本指を広げる・つまむと、このパーツだけ拡大・縮小"
+            : "地図は2本指で拡大・縮小、1本指で移動できます"}
         </span>
         {prefecture?.hasDistantIslands && (
           <button
             className="islands-toggle"
+            disabled={disabled || !!resizing}
             onClick={() => {
               setWhole(!whole);
               setZoom(1);
@@ -370,30 +428,70 @@ export default function DioramaMap({
           </button>
         )}
       </div>
-      <div className="map-scroll japan-scroll" ref={scroll}>
+      {resizing && (
+        <div
+          className="pinch-resize-bar"
+          role="region"
+          aria-label="パーツのピンチ調整"
+        >
+          <div>
+            <strong>{resizing.title}</strong>
+            <p>
+              パーツのサイズ{" "}
+              <output>{Math.round((resizing.size ?? 1) * 100)}%</output> ·
+              地図の大きさは変わりません
+            </p>
+          </div>
+          <div className="pinch-resize-buttons">
+            <button
+              className="secondary"
+              disabled={disabled}
+              onClick={onResizeCancel}
+            >
+              キャンセル
+            </button>
+            <button
+              className="primary"
+              disabled={disabled}
+              onClick={onResizeSave}
+            >
+              サイズを保存
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="map-scroll japan-scroll pinch-surface" ref={scroll}>
         <div style={{ width: zoom * 100 + "%" }}>
           <PrefectureCanvas
             key={(prefectureId || "japan") + whole}
             {...{
-              places,
               tool,
               moving,
               onCell,
-              disabled,
               prefecture,
               counts,
               whole,
+              resizing,
             }}
+            places={displayedPlaces}
+            disabled={disabled || !!resizing}
             onPrefecture={select}
           />
         </div>
       </div>
       <div className="map-bottom">
         <span>
-          {prefecture
-            ? (counts[prefecture.id] || 0) + "か所の思い出"
-            : "思い出を置いた都道府県 " + Object.keys(counts).length + " / 47"}
+          {resizing
+            ? "選んだパーツをピンチで調整 → サイズを保存"
+            : prefecture
+              ? (counts[prefecture.id] || 0) + "か所の思い出"
+              : "思い出を置いた都道府県 " +
+                Object.keys(counts).length +
+                " / 47"}
         </span>
+        <output className="map-zoom-percent" aria-label="地図の拡大率">
+          地図 {Math.round(zoom * 100)}%
+        </output>
         <div className="zoom-controls">
           <button
             aria-label="縮小"
