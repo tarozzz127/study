@@ -556,6 +556,51 @@ svg {
   scrollbar-color: #d6dfcc transparent;
   overscroll-behavior: contain;
 }
+.pinch-surface {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.pinch-resize-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border: 2px solid #2a7890;
+  border-radius: 10px;
+  background: #edf8fb;
+  color: #234a56;
+}
+.pinch-resize-bar strong {
+  overflow-wrap: anywhere;
+}
+.pinch-resize-bar p {
+  margin: 5px 0 0;
+  font-size: 12px;
+}
+.pinch-resize-bar output {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pinch-resize-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pinch-resize-action {
+  margin-top: 12px;
+  width: 100%;
+}
+.map-piece.resizing .piece-hit-target {
+  fill: #c1e9f14d;
+  stroke: #26778c;
+  stroke-width: 2;
+  stroke-dasharray: 5 3;
+  vector-effect: non-scaling-stroke;
+}
 .diorama {
   display: block;
   min-width: 100%;
@@ -622,6 +667,11 @@ svg {
   background: #fff;
   box-shadow: 0 2px 5px #44503307;
   overflow: hidden;
+}
+.map-zoom-percent {
+  font-size: 11px;
+  color: #345348;
+  font-variant-numeric: tabular-nums;
 }
 .zoom-controls button {
   width: 44px;

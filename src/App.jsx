@@ -12,6 +12,7 @@ import {
   Grid2X2,
   Leaf,
   MapPin,
+  Maximize2,
   Move,
   Pencil,
   Settings2,
@@ -170,6 +171,7 @@ export default function App() {
   const [toolLook, setToolLook] = useState({ variant: 0, size: 1 });
   const [prefectureId, setPrefectureId] = useState(null);
   const [focusPlace, setFocusPlace] = useState(null);
+  const [resizing, setResizing] = useState(null);
   const [places, setPlaces] = useState([]),
     [ready, setReady] = useState(false),
     [fatal, setFatal] = useState(false),
@@ -202,6 +204,9 @@ export default function App() {
     const timeout = setTimeout(() => setNotice(""), 6500);
     return () => clearTimeout(timeout);
   }, [notice]);
+  useEffect(() => {
+    if (dialog) setResizing(null);
+  }, [dialog]);
   const level = Math.floor(places.length / 5) + 1,
     remaining = 5 - (places.length % 5);
   const natureCount = places.filter(
@@ -242,6 +247,7 @@ export default function App() {
     }
   }
   function choosePiece(id) {
+    setResizing(null);
     setTool(id);
     setToolLook({ variant: 0, size: 1 });
     setMoving(null);
@@ -579,7 +585,7 @@ export default function App() {
               </div>
             )}
             <PlaceSearch
-              disabled={!ready || fatal || busy || !!dialog}
+              disabled={!ready || fatal || busy || !!dialog || !!resizing}
               onChoose={addSearchPlace}
             />
             <DioramaMap
@@ -597,6 +603,24 @@ export default function App() {
               focusPlace={
                 focusPlace?.prefecture === prefectureId ? focusPlace : null
               }
+              resizing={resizing}
+              onResizeChange={(size) =>
+                setResizing((place) => ({ ...place, size }))
+              }
+              onResizeCancel={() => setResizing(null)}
+              onResizeSave={async () => {
+                if (
+                  await persist(
+                    places.map((place) =>
+                      place.id === resizing.id
+                        ? { ...place, size: resizing.size }
+                        : place,
+                    ),
+                    "パーツのサイズを保存しました。",
+                  )
+                )
+                  setResizing(null);
+              }}
             />
             {unassignedCount > 0 && (
               <div className="unassigned-note">
@@ -778,6 +802,22 @@ export default function App() {
               <Trash2 size={18} />
             </button>
           </div>
+          {selected.prefecture && (
+            <button
+              className="secondary pinch-resize-action"
+              onClick={() => {
+                setResizing({ ...selected, size: selected.size ?? 1 });
+                setPrefectureId(selected.prefecture);
+                setFocusPlace(selected);
+                setTool(null);
+                setMoving(null);
+                setPanel("build");
+                close();
+              }}
+            >
+              <Maximize2 size={16} /> 地図上でピンチしてサイズ調整
+            </button>
+          )}
           {selected.prefecture && (
             <button
               className="text-button"

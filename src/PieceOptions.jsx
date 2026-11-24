@@ -1,4 +1,5 @@
-import { useId } from "react";
+import { useId, useRef } from "react";
+import usePinch from "./usePinch.js";
 import PieceArt, { PieceShape } from "./PieceArt.jsx";
 import { looksFor, MIN_PIECE_SIZE, MAX_PIECE_SIZE } from "./lib/diorama.js";
 
@@ -10,6 +11,15 @@ export default function PieceOptions({
   disabled = false,
 }) {
   const id = useId();
+  const preview = useRef(null);
+  usePinch(preview, {
+    value: value.size ?? 1,
+    min: MIN_PIECE_SIZE,
+    max: MAX_PIECE_SIZE,
+    disabled,
+    onChange: (size) =>
+      onChange({ ...value, size: Math.round(size * 100) / 100 }),
+  });
   const percent = Math.round((value.size ?? 1) * 100);
   const resize = (next) =>
     onChange({
@@ -24,7 +34,11 @@ export default function PieceOptions({
       aria-label="見た目とサイズ"
     >
       {!compact && (
-        <div className="appearance-preview">
+        <div
+          className="appearance-preview pinch-surface"
+          ref={preview}
+          aria-label="2本指でピンチしてパーツのサイズを調整"
+        >
           <svg viewBox="-160 -310 320 384" aria-hidden="true">
             <g transform={`scale(${value.size ?? 1})`}>
               <PieceShape type={piece} variant={value.variant ?? 0} />
@@ -97,7 +111,7 @@ export default function PieceOptions({
             <span>大きく 300%</span>
           </div>
           <p className="muted">
-            指でスライダーを動かして調整。保存後も何度でも変えられます。
+            上の絵を2本指で広げる・つまむとサイズ調整。スライダーでも変えられます。
           </p>
         </div>
       )}
